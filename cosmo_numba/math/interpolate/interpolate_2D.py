@@ -1,6 +1,16 @@
+""" Interpolation in 2D
+
+Implementation of 2D interpolation taken from
+https://github.com/dbstein/fast_interp and adapted to a numba class that can be
+used in jitted functions.
+
+Author: Axel Guinot
+
+"""
 import numpy as np
 import numba as nb
-# from numba import int64, float64, boolean, typeof
+
+from interpolate_1D import _compute_bounds1, _extrapolate1d_x
 
 
 @nb.njit(
@@ -259,33 +269,6 @@ def _interp2d_k9(f, xout, yout, fout, a, h, n, p, o, lb, ub):
 
 
 @nb.njit(
-    nb.types.Tuple((nb.float64, nb.float64))(
-        nb.float64,
-        nb.float64,
-        nb.float64,
-        nb.boolean,
-        nb.boolean,
-        nb.int64,
-        nb.int64,
-    ),
-    fastmath=True,
-)
-def _compute_bounds1(a, b, h, p, c, e, k):
-    if p:
-        return -1e100, 1e100
-    elif not c:
-        d = h*(k//2)
-        return a+d, b-d
-    else:
-        d = e*h
-        u = b+d
-        # the routines can fail when we exactly hit the right endpoint,
-        # this protects against that
-        u -= u*1e-15
-        return a-d, u
-
-
-@nb.njit(
     nb.types.Tuple((nb.float64[:], nb.float64[:]))(
         nb.float64[:],
         nb.float64[:],
@@ -307,35 +290,6 @@ def _compute_bounds(a, b, h, p, c, e, k):
         np.array([bounds[0][0], bounds[1][0]]),
         np.array([bounds[0][1], bounds[1][1]])
     )
-
-
-@nb.njit(
-    nb.void(
-        nb.float64[:, :],
-        nb.int64,
-        nb.int64,
-    ),
-    fastmath=True,
-)
-def _extrapolate1d_x(f, k, o):
-    for ix in range(o):
-        il = o-ix-1
-        ih = f.shape[0]-(o-ix)
-        if k == 1:
-            f[il] = 2*f[il+1] - 1*f[il+2]
-            f[ih] = 2*f[ih-1] - 1*f[ih-2]
-        if k == 3:
-            f[il] = 4*f[il+1] - 6*f[il+2] + 4*f[il+3] - f[il+4]
-            f[ih] = 4*f[ih-1] - 6*f[ih-2] + 4*f[ih-3] - f[ih-4]
-        if k == 5:
-            f[il] = 6*f[il+1]-15*f[il+2]+20*f[il+3]-15*f[il+4]+6*f[il+5]-f[il+6]  # noqa
-            f[ih] = 6*f[ih-1]-15*f[ih-2]+20*f[ih-3]-15*f[ih-4]+6*f[ih-5]-f[ih-6]  # noqa
-        if k == 7:
-            f[il] = 8*f[il+1]-28*f[il+2]+56*f[il+3]-70*f[il+4]+56*f[il+5]-28*f[il+6]+8*f[il+7]-f[il+8]  # noqa
-            f[ih] = 8*f[ih-1]-28*f[ih-2]+56*f[ih-3]-70*f[ih-4]+56*f[ih-5]-28*f[ih-6]+8*f[ih-7]-f[ih-8]  # noqa
-        if k == 9:
-            f[il] = 10*f[il+1]-45*f[il+2]+120*f[il+3]-210*f[il+4]+252*f[il+5]-210*f[il+6]+120*f[il+7]-45*f[il+8]+10*f[il+9]-f[il+10]  # noqa
-            f[ih] = 10*f[ih-1]-45*f[ih-2]+120*f[ih-3]-210*f[ih-4]+252*f[ih-5]-210*f[ih-6]+120*f[ih-7]-45*f[ih-8]+10*f[ih-9]-f[ih-10]  # noqa
 
 
 @nb.njit(

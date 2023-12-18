@@ -10,9 +10,9 @@ Author: Axel Guinot
 import numpy as np
 import numba as nb
 
-from math.interpolate_1D import AkimaInterp1D
-from math.interpolate_2D import nb_interp2d
-from math.integrate import simpson
+from cosmo_numba.math.interpolate.interpolate_1D import AkimaInterp1D
+from cosmo_numba.math.interpolate.interpolate_2D import nb_interp2d
+from cosmo_numba.math.integrate.simpson import simpson
 
 
 @nb.njit(

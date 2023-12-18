@@ -9,8 +9,8 @@ Kernel currently implemented:
 import numpy as np
 import numba as nb
 
-from math.integrate import simpson
-from math.interpolate_1D import AkimaInterp1D
+from cosmo_numba.math.integrate.simpson import simpson
+from cosmo_numba.math.interpolate.interpolate_1D import AkimaInterp1D
 
 
 @nb.njit(
@@ -54,7 +54,7 @@ def lensing_int_kernel(dndz, z, z_prime, z_max, chi, chi_prime):
             nb.float64[:],
             nb.float64,
             nb.float64[:],
-            nb.types.Omitted(10024)
+            nb.types.Omitted(256)
         ),
         nb.void(
             AkimaInterp1D.class_type.instance_type,
