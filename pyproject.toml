@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=64.0", "wheel"]  # , "setuptools_scm[toml]>=6.2"
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cosmo_numba"
+version = "0.0.1"
+authors = [
+  { name="Axel Guinot", email="axel.guinot.astro@gmail.com" },
+]
+description = "Cosmology computation accelerated with Numba"
+readme = "README.md"
+requires-python = ">=3.7,<3.12"
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numba>0.54",
+    "numpy>=1.24.4",
+    "NumbaQuadpack @ git+https://github.com/Nicholaswogan/NumbaQuadpack.git",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/aguinot/cosmo-numba"
+"Bug Tracker" = "https://github.com/aguinot/cosmo-numba/issues"
+
+[tool.setuptools]
+packages = ["cosmo_numba", "cosmo_numba.math", "cosmo_numba.kernels"]
