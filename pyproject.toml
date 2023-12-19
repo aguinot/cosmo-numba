@@ -28,4 +28,9 @@ dependencies = [
 "Bug Tracker" = "https://github.com/aguinot/cosmo-numba/issues"
 
 [tool.setuptools]
-packages = ["cosmo_numba", "cosmo_numba.math", "cosmo_numba.kernels"]
+packages = [
+  "cosmo_numba",
+  "cosmo_numba.math",
+  "cosmo_numba.kernels",
+  "cosmo_numba.B_modes"
+]
