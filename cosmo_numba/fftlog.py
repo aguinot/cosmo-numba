@@ -13,7 +13,7 @@ Author: Axel Guinot
 import numpy as np
 import numba as nb
 
-from math.utils import lngamma, compute_fft, compute_ifft
+from cosmo_numba.math.utils import lngamma, compute_fft, compute_ifft
 
 
 @nb.njit(
