@@ -114,7 +114,7 @@ def fht(
     if noring:
         kcrc = goodkr(N, mu, q, L, kcrc)
 
-    u = np.empty(N, dtype=np.complex64)
+    u = np.empty(N, dtype=np.complex128)
     compute_u_coeff(N, mu, q, L, kcrc, u)
 
     prefac_pk = np.power(k, dim/2.-q)
