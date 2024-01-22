@@ -95,7 +95,10 @@ def compute_u_coeff(N, mu, q, L, kcrc, u):
 
 
 @nb.njit(
-    nb.types.Tuple((nb.float64[:], nb.float64[:]))(
+    nb.types.Tuple((
+        nb.types.Array(nb.float64, 1, 'C', False, aligned=True),
+        nb.types.Array(nb.float64, 1, 'C', False, aligned=True),
+    ))(
         nb.int64,
         nb.float64[:],
         nb.float64[:],
@@ -130,53 +133,6 @@ def fht(
     a = prefac_pk * pk
     b = compute_fft(a)
     b *= u
-    b = compute_ifft(b)
-
-    for n in range(0, int(N/2)):
-        tmp = b[n]
-        b[n] = b[N-n-1]
-        b[N-n-1] = tmp
-    xi = prefac_xi * np.real(b)
-
-    return r, xi
-
-
-@nb.njit(
-    nb.types.Tuple((nb.float64[:], nb.float64[:]))(
-        nb.int64,
-        nb.float64[:],
-        nb.float64[:],
-        nb.int64,
-        nb.int64,
-        nb.float64,
-        nb.int64,
-        nb.int64,
-    ),
-    fastmath=True
-)
-def ifht(
-    N, k, pk, dim, mu, q, kcrc, noring
-):
-    L = np.log(k[N-1]/k[0]) * N/(N-1.)
-    if noring:
-        kcrc = goodkr(N, mu, q, L, kcrc)
-
-    u = np.empty(N, dtype=np.complex128)
-    compute_u_coeff(N, mu, q, L, kcrc, u)
-
-    prefac_pk = np.power(k, dim/2.-q)
-    k0r0 = kcrc * np.exp(-L)
-    r = np.zeros(N)
-    r[0] = k0r0/k[0]
-    for n in range(1, N):
-        r[n] = r[0] * np.exp(n*L/N)
-
-    one_over_2pi_dhalf = pow(2*np.pi, -dim/2)
-    prefac_xi = one_over_2pi_dhalf * np.power(r, -dim/2-q)
-
-    a = prefac_pk * pk
-    b = compute_fft(a)
-    b /= u.conj()
     b = compute_ifft(b)
 
     for n in range(0, int(N/2)):
