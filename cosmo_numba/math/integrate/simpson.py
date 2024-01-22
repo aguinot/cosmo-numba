@@ -2,6 +2,8 @@
 
 Simplified version of the Simpson method from scipy
 
+Author: Axel Guinot
+
 """
 
 import numba as nb

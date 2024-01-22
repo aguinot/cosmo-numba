@@ -114,9 +114,9 @@ def interp_quad(
         See interp1d, by default 0
     log_interp : bool, optional
         See interp1d, by default False
-    epsabs : _type_, optional
+    epsabs : float, optional
         Absolute error tolerance, by default 1.49e-8
-    epsrel : _type_, optional
+    epsrel : float, optional
         Relative error tolerance, by default 1.49e-8
 
     Returns
