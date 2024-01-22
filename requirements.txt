@@ -1,3 +1,5 @@
 numpy
 numba>=0.54
 NumbaQuadpack
+mpmath>=0.19
+sympy

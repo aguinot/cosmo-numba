@@ -21,6 +21,8 @@ dependencies = [
     "numba>0.54",
     "numpy>=1.24.4",
     "NumbaQuadpack @ git+https://github.com/Nicholaswogan/NumbaQuadpack.git",
+    "mpmath>=0.19",
+    "sympy>=1.12"
 ]
 
 [project.urls]
