@@ -118,7 +118,7 @@ def K_p(t, t_int, theta_bar, B):
     numpy.ndarray(float64)
         K_plus
     """
-    return (theta_bar/t)**2 * H_m(t, t_int, B, theta_bar)
+    return (theta_bar/t)**2 * H_m(t, t_int, theta_bar, B)
 
 
 @nb.njit(
@@ -152,7 +152,7 @@ def K_m(t, t_int, theta_bar, B):
         K_minus
     """
     return (1-B**2)**2 * theta_bar**4/(t**2*t_int**2) * \
-        H_p((1-B**2)*theta_bar**2/t, (1-B**2)*theta_bar**2/t_int, B, theta_bar)
+        H_p((1-B**2)*theta_bar**2/t, (1-B**2)*theta_bar**2/t_int, theta_bar, B)
 
 
 @nb.njit(
@@ -205,7 +205,7 @@ def get_S(theta_int, xip_int, xim_int, t, tmin, tmax, theta_bar, B):
     d_theta_int = np.mean(np.diff(np.log(theta_int)))
 
     S_p_integrand = 1/theta_bar**2 * theta_int * xip_int \
-        * H_p(t, theta_int, B, theta_bar)
+        * H_p(t, theta_int, theta_bar, B)
     S_p_int = interp_quad(
         np.log(theta_int[0]),
         np.log(theta_int[-1]),
@@ -220,7 +220,7 @@ def get_S(theta_int, xip_int, xim_int, t, tmin, tmax, theta_bar, B):
         epsabs=1e-10, epsrel=1e-10,
     )[0]
 
-    S_m_integrand = 1/theta_int * xim_int * H_m(t, theta_int, B, theta_bar)
+    S_m_integrand = 1/theta_int * xim_int * H_m(t, theta_int, theta_bar, B)
     S_m_int = interp_quad(
         np.log(theta_int[0]),
         np.log(theta_int[-1]),
@@ -288,7 +288,7 @@ def get_V(theta_int, xip_int, xim_int, t, tmin, tmax, theta_bar, B):
     d_theta_int = np.mean(np.diff(np.log(theta_int)))
 
     V_p_integrand = 1/theta_bar**2 * theta_int * xip_int \
-        * K_p(t, theta_int, B, theta_bar)
+        * K_p(t, theta_int, theta_bar, B)
     V_p_int = interp_quad(
         np.log(theta_int[0]),
         np.log(theta_int[-1]),
@@ -304,7 +304,7 @@ def get_V(theta_int, xip_int, xim_int, t, tmin, tmax, theta_bar, B):
     )[0]
 
     V_m_integrand = 1/theta_bar**2 * theta_int * xim_int \
-        * K_m(t, theta_int, B, theta_bar)
+        * K_m(t, theta_int, theta_bar, B)
     V_m_int = interp_quad(
         np.log(theta_int[0]),
         np.log(theta_int[-1]),
