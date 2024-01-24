@@ -216,7 +216,7 @@ class COSEBIS():
 
         return Wn_log
 
-    def cosebis_from_xipm(self, theta, dtheta, xi_plus, xi_minus):
+    def cosebis_from_xipm(self, theta, dtheta, xi_plus, xi_minus, cache=False):
 
         if (np.min(theta) < self.tmin) | (np.max(theta) > self.tmax):
             print(
@@ -225,8 +225,15 @@ class COSEBIS():
                 f"[{self.tmin, self.tmax}]."
             )
 
-        Tp_log = self.get_Tp_log(theta)
-        Tm_log = self.get_Tm_log(theta)
+        if cache & hasattr(self, "_Tp_log"):
+            Tp_log = self._Tp_log
+            Tm_log = self._Tm_log
+        else:
+            Tp_log = self.get_Tp_log(theta)
+            Tm_log = self.get_Tm_log(theta)
+            if cache:
+                self._Tp_log = Tp_log
+                self._Tm_log = Tm_log
 
         theta_rad = np.deg2rad(theta/60)
         dtheta_rad = np.deg2rad(dtheta/60)
@@ -242,9 +249,14 @@ class COSEBIS():
 
         return C_E, C_B
 
-    def cosebis_from_Cell(self, ell, Cell_E, Cell_B, theta=None):
+    def cosebis_from_Cell(self, ell, Cell_E, Cell_B, theta=None, cache=False):
 
-        Wn_log = self.get_Wn_log(theta)
+        if cache & hasattr(self, "_Wn_log"):
+            Wn_log = self._Wn_log
+        else:
+            Wn_log = self.get_Wn_log(theta)
+            if cache:
+                self._Wn_log = Wn_log
 
         C_E, C_B = get_Cell_cosebis(
             ell,
