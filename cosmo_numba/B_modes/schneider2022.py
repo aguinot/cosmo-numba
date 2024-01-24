@@ -341,7 +341,7 @@ def get_V(theta_int, xip_int, xim_int, t, tmin, tmax, theta_bar, B):
         nb.float64,
     ),
     fastmath=True,
-    parallel=True,
+    # parallel=True,
 )
 def get_pure_EB_modes(
     theta, xip, xim,
@@ -475,7 +475,7 @@ def get_pure_EB_modes(
         nb.float64,
     ),
     fastmath=True,
-    parallel=True,
+    # parallel=True,
 )
 def get_CNPT_EB_modes(
     theta, xip, xim,
