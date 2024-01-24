@@ -59,7 +59,7 @@ def tp_log_nb(z, roots, norm):
         ),
         nb.float64[:]
     ),
-    parallel=True,
+    # parallel=True,
 )
 def tp_n_log(z, roots_n, norms_n):
     """tp_n_log
@@ -241,7 +241,7 @@ def tm_log_nb(z, roots, norm):
         ),
         nb.float64[:]
     ),
-    parallel=True,
+    # parallel=True,
 )
 def tm_n_log(z, roots_n, norms_n):
     """tp_n_log
@@ -282,7 +282,7 @@ def tm_n_log(z, roots_n, norms_n):
         nb.float64,
     ),
     fastmath=True,
-    parallel=False,
+    # parallel=False,
 )
 def wn_log(theta_rad, Tp_log, q):
     """wn_log
@@ -342,7 +342,7 @@ def wn_log(theta_rad, Tp_log, q):
         nb.int64,
     ),
     fastmath=True,
-    parallel=True,
+    # parallel=True,
 )
 def get_xipm_cosebis(theta_rad, dtheta_rad, xip, xim, Tp_log, Tm_log, N_mode):
     """get_xipm_cosebis
@@ -394,7 +394,7 @@ def get_xipm_cosebis(theta_rad, dtheta_rad, xip, xim, Tp_log, Tm_log, N_mode):
         nb.int64,
     ),
     fastmath=True,
-    parallel=True,
+    # parallel=True,
 )
 def get_Cell_cosebis(ell, Cell_E, Cell_B, Wn_log, N_mode):
     """get_xipm_cosebis
@@ -444,7 +444,7 @@ def get_Cell_cosebis(ell, Cell_E, Cell_B, Wn_log, N_mode):
         nb.int64,
     ),
     fastmath=True,
-    parallel=True,
+    # parallel=True,
 )
 def get_cosebis_cov_from_xipm_cov(
     theta_rad,
