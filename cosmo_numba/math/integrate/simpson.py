@@ -1,4 +1,4 @@
-""" Simpson integral
+"""Simpson integral
 
 Simplified version of the Simpson method from scipy
 
@@ -19,44 +19,52 @@ def numbadiff(x):
 
 
 @nb.njit(
-    nb.float64(
-        nb.float64[:],
-        nb.int64,
-        nb.int64,
-        nb.float64[:],
-        nb.float64
-    ),
+    nb.float64(nb.float64[:], nb.int64, nb.int64, nb.float64[:], nb.float64),
     fastmath=True,
 )
 def _basic_simpson(y, start, stop, x, dx):
-
     if start is None:
         start = 0
     step = 2
 
     if x is None:  # Even-spaced Simpson's rule.
         result = np.sum(
-            y[start:stop:step] +
-            4.0*y[start+1:stop+1:step] +
-            y[start+2:stop+2:step]
+            y[start:stop:step]
+            + 4.0 * y[start + 1 : stop + 1 : step]
+            + y[start + 2 : stop + 2 : step]
         )
         result *= dx / 3.0
     else:
-
         # Account for possibly different spacings.
         #    Simpson's rule changes a bit.
         h = numbadiff(x)
         h0 = h[start:stop:step]
-        h1 = h[start+1:stop+1:step]
+        h1 = h[start + 1 : stop + 1 : step]
         hsum = h0 + h1
         hprod = h0 * h1
         h0divh1 = np.true_divide(h0, h1)
-        tmp = hsum/6.0 * (
-            y[start:stop:step] *
-            (2.0 - np.true_divide(1.0, h0divh1,)) +
-            y[start+1:stop+1:step] *
-            (hsum * np.true_divide(hsum, hprod,)) +
-            y[start+2:stop+2:step] * (2.0 - h0divh1)
+        tmp = (
+            hsum
+            / 6.0
+            * (
+                y[start:stop:step]
+                * (
+                    2.0
+                    - np.true_divide(
+                        1.0,
+                        h0divh1,
+                    )
+                )
+                + y[start + 1 : stop + 1 : step]
+                * (
+                    hsum
+                    * np.true_divide(
+                        hsum,
+                        hprod,
+                    )
+                )
+                + y[start + 2 : stop + 2 : step] * (2.0 - h0divh1)
+            )
         )
         result = np.sum(tmp)
     return result
@@ -65,12 +73,11 @@ def _basic_simpson(y, start, stop, x, dx):
 @nb.njit(
     [
         nb.float64(nb.float64[:], nb.float64[:], nb.float64),
-        nb.float64(nb.float64[:], nb.float64[:], nb.types.Omitted(1.))
+        nb.float64(nb.float64[:], nb.float64[:], nb.types.Omitted(1.0)),
     ],
     fastmath=True,
 )
-def simpson(y, x=None, dx=1.):
-
+def simpson(y, x=None, dx=1.0):
     y = np.asarray(y)
     N = y.shape[0]
 
@@ -79,7 +86,7 @@ def simpson(y, x=None, dx=1.):
         result = 0.0
 
         # use Simpson's rule on first intervals
-        result = _basic_simpson(y, 0, N-3, x, dx)
+        result = _basic_simpson(y, 0, N - 3, x, dx)
 
         h = np.asfarray([dx, dx])
         if x is not None:
@@ -118,9 +125,9 @@ def simpson(y, x=None, dx=1.):
             den,
         )
 
-        result += alpha*y[-1] + beta*y[-2] - eta*y[-3]
+        result += alpha * y[-1] + beta * y[-2] - eta * y[-3]
 
         result = result + val
     else:
-        result = _basic_simpson(y, 0, N-2, x, dx)
+        result = _basic_simpson(y, 0, N - 2, x, dx)
     return result

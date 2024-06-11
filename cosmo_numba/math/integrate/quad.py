@@ -1,4 +1,4 @@
-""" Quad integration
+"""Quad integration
 
 Implementation of the quad integration based on NumbaQuadpack
 https://github.com/Nicholaswogan/NumbaQuadpack. The dqags has been adapted to
@@ -8,6 +8,7 @@ It can also be called from within jitted functions.
 Author: Axel Guinot
 
 """
+
 import numba as nb
 import numpy as np
 from NumbaQuadpack import dqags
@@ -16,7 +17,7 @@ from itertools import product
 
 from cosmo_numba.math.interpolate.interpolate_1D import (
     nb_interp1d_func,
-    spec_interp
+    spec_interp,
 )
 
 
@@ -24,16 +25,15 @@ def make_signature(output_sig, *args):
     output_comb = list(product(*args, repeat=1))
     sig_final = []
     for output in output_comb:
-        sig_tmp = ', '.join(output)
-        sig_tmp = f'({sig_tmp})'
+        sig_tmp = ", ".join(output)
+        sig_tmp = f"({sig_tmp})"
         sig_tmp = output_sig + sig_tmp
         sig_final.append(sig_tmp)
     return sig_final
 
 
 INTERP_ADDRESS = nb.experimental.function_type._get_wrapper_address(
-    nb_interp1d_func,
-    spec_interp
+    nb_interp1d_func, spec_interp
 )
 
 
@@ -42,20 +42,20 @@ INTERP_ADDRESS = nb.experimental.function_type._get_wrapper_address(
 # To see the full signature of the function, one can call
 # `interp_quad.signature` from python.
 spec_interp_quad = make_signature(
-    'Tuple((float64, float64, boolean))',
-    ['float64'],
-    ['float64'],
-    ['float64'],
-    ['float64[:]'],
-    ['float64'],
-    ['float64'],
-    ['int64', 'Omitted(3)'],
-    ['boolean', 'Omitted(False)'],
-    ['boolean', 'Omitted(True)'],
-    ['int64', 'Omitted(0)'],
-    ['boolean', 'Omitted(False)'],
-    ['float64', 'Omitted(1.49e-8)'],
-    ['float64', 'Omitted(1.49e-8)'],
+    "Tuple((float64, float64, boolean))",
+    ["float64"],
+    ["float64"],
+    ["float64"],
+    ["float64[:]"],
+    ["float64"],
+    ["float64"],
+    ["int64", "Omitted(3)"],
+    ["boolean", "Omitted(False)"],
+    ["boolean", "Omitted(True)"],
+    ["int64", "Omitted(0)"],
+    ["boolean", "Omitted(False)"],
+    ["float64", "Omitted(1.49e-8)"],
+    ["float64", "Omitted(1.49e-8)"],
 )
 
 
@@ -127,18 +127,18 @@ def interp_quad(
 
     len_fx = len(fx)
 
-    data = np.empty(len_fx+8, dtype=np.float64)
+    data = np.empty(len_fx + 8, dtype=np.float64)
     data[0] = np.float64(len_fx)
     for i in range(len_fx):
-        data[i+1] = fx[i]
-    data[len_fx+1] = x_start
-    data[len_fx+2] = x_end
-    data[len_fx+3] = x_step
-    data[len_fx+4] = np.float64(k)
-    data[len_fx+5] = np.float64(periodic)
-    data[len_fx+6] = np.float64(padding)
-    data[len_fx+7] = np.float64(extrap_dist)
-    data[len_fx+8] = np.float64(log_interp)
+        data[i + 1] = fx[i]
+    data[len_fx + 1] = x_start
+    data[len_fx + 2] = x_end
+    data[len_fx + 3] = x_step
+    data[len_fx + 4] = np.float64(k)
+    data[len_fx + 5] = np.float64(periodic)
+    data[len_fx + 6] = np.float64(padding)
+    data[len_fx + 7] = np.float64(extrap_dist)
+    data[len_fx + 8] = np.float64(log_interp)
 
     res = dqags(
         INTERP_ADDRESS,

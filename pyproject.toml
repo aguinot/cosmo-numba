@@ -33,6 +33,8 @@ dependencies = [
 packages = [
   "cosmo_numba",
   "cosmo_numba.math",
+  "cosmo_numba.math.integrate",
+  "cosmo_numba.math.interpolate",
   "cosmo_numba.kernels",
   "cosmo_numba.B_modes"
 ]
