@@ -88,7 +88,7 @@ def simpson(y, x=None, dx=1.0):
         # use Simpson's rule on first intervals
         result = _basic_simpson(y, 0, N - 3, x, dx)
 
-        h = np.asfarray([dx, dx])
+        h = np.asarray([dx, dx], dtype=np.float64)
         if x is not None:
             # grab the last two spacings from the appropriate axis
             diffs = numbadiff(x)
