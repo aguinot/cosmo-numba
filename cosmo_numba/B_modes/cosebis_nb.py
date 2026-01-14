@@ -1,4 +1,4 @@
-""" COSEBIs numba
+"""COSEBIs numba
 
 Here you find all the computation necessary for the COSEBIs performed in using
 Numba.
@@ -6,6 +6,7 @@ Numba.
 Author: Axel Guinot
 
 """
+
 import numba as nb
 import numpy as np
 
@@ -47,7 +48,7 @@ def tp_log_nb(z, roots, norm):
         tmp = 1
         for root in roots:
             tmp *= z[i] - root
-        out[i] = norm*tmp
+        out[i] = norm * tmp
     return out
 
 
@@ -55,9 +56,9 @@ def tp_log_nb(z, roots, norm):
     nb.float64[:, :](
         nb.float64[:],
         nb.types.ListType(
-            nb.types.Array(nb.float64, 1, 'C', False, aligned=True)
+            nb.types.Array(nb.float64, 1, "C", False, aligned=True)
         ),
-        nb.float64[:]
+        nb.float64[:],
     ),
     # parallel=True,
 )
@@ -122,9 +123,9 @@ def _tp_log_nb(z, data):
 
     n_roots = int(data[0])
     roots = np.empty(n_roots, dtype=np.float64)
-    for i in range(1, n_roots+1):
-        roots[i-1] = data[i]
-    norm = data[n_roots+1]
+    for i in range(1, n_roots + 1):
+        roots[i - 1] = data[i]
+    norm = data[n_roots + 1]
 
     out = 1
     for root in roots:
@@ -163,14 +164,14 @@ def _integrand_tm_log(y, data_integ_):
         Integrand.
     """
 
-    len_data_tp_log = int(data_integ_[0])+3
+    len_data_tp_log = int(data_integ_[0]) + 3
     data_integ = nb.carray(data_integ_, (len_data_tp_log,), np.float64)
     tp_log_y = _tp_log_nb(y, data_integ[:-1])
 
     z = np.float64(data_integ[-1])
-    fac = np.exp(2.*(y - z)) - 3.*np.exp(4.*(y - z))
+    fac = np.exp(2.0 * (y - z)) - 3.0 * np.exp(4.0 * (y - z))
 
-    return tp_log_y*fac
+    return tp_log_y * fac
 
 
 # We need to do this because the attribute `.address` is not accessible from
@@ -210,11 +211,11 @@ def tm_log_nb(z, roots, norm):
 
     # build data for integration
     n_roots = len(roots)
-    data = np.empty(n_roots+2, dtype=np.float64)
-    data_integ = np.empty(n_roots+3, dtype=np.float64)
+    data = np.empty(n_roots + 2, dtype=np.float64)
+    data_integ = np.empty(n_roots + 3, dtype=np.float64)
     data[0] = n_roots
-    data[1:n_roots+1] = roots
-    data[n_roots+1] = norm
+    data[1 : n_roots + 1] = roots
+    data[n_roots + 1] = norm
     data_integ[:-1] = data
 
     n_z = len(z)
@@ -222,13 +223,8 @@ def tm_log_nb(z, roots, norm):
     for i in range(n_z):
         data_integ[-1] = z[i]
         tp_z = _tp_log_nb(z[i], data)
-        res_int = dqags(
-            INTEG_TM_LOG_ADDRESS,
-            0.,
-            z[i],
-            data=data_integ
-        )
-        tm_log[i] = tp_z + 4. * res_int[0]
+        res_int = dqags(INTEG_TM_LOG_ADDRESS, 0.0, z[i], data=data_integ)
+        tm_log[i] = tp_z + 4.0 * res_int[0]
 
     return tm_log
 
@@ -237,9 +233,9 @@ def tm_log_nb(z, roots, norm):
     nb.float64[:, :](
         nb.float64[:],
         nb.types.ListType(
-            nb.types.Array(nb.float64, 1, 'C', False, aligned=True)
+            nb.types.Array(nb.float64, 1, "C", False, aligned=True)
         ),
-        nb.float64[:]
+        nb.float64[:],
     ),
     # parallel=True,
 )
@@ -312,19 +308,11 @@ def wn_log(theta_rad, Tp_log, q):
 
     Wn_log = nb.typed.List()
     for n in nb.prange(N_mode):
-        ell_, Wn_log_tmp = fht(
-            nbins,
-            theta_rad,
-            Tp_log[n],
-            2.,
-            0.,
-            q,
-            1,
-            1
-        )
+        ell_, Wn_log_tmp = fht(nbins, theta_rad, Tp_log[n], 2.0, 0.0, q, 1, 1)
         Wn_log.append(
             AkimaInterp1D(
-                ell_, Wn_log_tmp*2.*np.pi,
+                ell_,
+                Wn_log_tmp * 2.0 * np.pi,
             )
         )
 
@@ -376,8 +364,8 @@ def get_xipm_cosebis(theta_rad, dtheta_rad, xip, xim, Tp_log, Tm_log, N_mode):
     C_E = np.empty(N_mode, dtype=np.float64)
     C_B = np.empty(N_mode, dtype=np.float64)
     for n in nb.prange(N_mode):
-        integrand_E = theta_rad * (Tp_log[n]*xip + Tm_log[n]*xim) * 0.5
-        integrand_B = theta_rad * (Tp_log[n]*xip - Tm_log[n]*xim) * 0.5
+        integrand_E = theta_rad * (Tp_log[n] * xip + Tm_log[n] * xim) * 0.5
+        integrand_B = theta_rad * (Tp_log[n] * xip - Tm_log[n] * xim) * 0.5
 
         C_E[n] = np.sum(integrand_E * dtheta_rad)
         C_B[n] = np.sum(integrand_B * dtheta_rad)
@@ -424,10 +412,8 @@ def get_Cell_cosebis(ell, Cell_E, Cell_B, Wn_log, N_mode):
     C_E = np.empty(N_mode, dtype=np.float64)
     C_B = np.empty(N_mode, dtype=np.float64)
     for n in nb.prange(N_mode):
-        integrand_E = \
-            ell * Cell_E * Wn_log[n].eval(ell) / np.pi * 0.5
-        integrand_B = \
-            ell * Cell_B * Wn_log[n].eval(ell) / np.pi * 0.5
+        integrand_E = ell * Cell_E * Wn_log[n].eval(ell) / np.pi * 0.5
+        integrand_B = ell * Cell_B * Wn_log[n].eval(ell) / np.pi * 0.5
         C_E[n] = simpson(integrand_E, ell)
         C_B[n] = simpson(integrand_B, ell)
 
@@ -447,12 +433,7 @@ def get_Cell_cosebis(ell, Cell_E, Cell_B, Wn_log, N_mode):
     # parallel=True,
 )
 def get_cosebis_cov_from_xipm_cov(
-    theta_rad,
-    dtheta_rad,
-    cov_xipm,
-    Tp_log,
-    Tm_log,
-    N_mode
+    theta_rad, dtheta_rad, cov_xipm, Tp_log, Tm_log, N_mode
 ):
     """get_cosebis_cov_from_xipm_cov
 
@@ -482,7 +463,7 @@ def get_cosebis_cov_from_xipm_cov(
     """
 
     n_theta = len(theta_rad)
-    n_bins = np.int64(cov_xipm.shape[0]/2)
+    n_bins = np.int64(cov_xipm.shape[0] / 2)
 
     cov_En = np.zeros((N_mode, N_mode), dtype=np.float64)
     cov_Bn = np.zeros((N_mode, N_mode), dtype=np.float64)
@@ -493,27 +474,31 @@ def get_cosebis_cov_from_xipm_cov(
             integ_B_tmp = np.empty(len(theta_rad), dtype=np.float64)
             for i in nb.prange(n_theta):
                 # E-modes
-                integ_E_tmp2 = theta_rad*(
-                    Tp_log[m][i]*Tp_log[n]*cov_xipm[i, :n_bins]
-                    + Tp_log[m][i]*Tm_log[n]*cov_xipm[i, n_bins:]
-                    + Tm_log[m][i]*Tp_log[n]*cov_xipm[n_bins+i, :n_bins]
-                    + Tm_log[m][i]*Tm_log[n]*cov_xipm[n_bins+i, n_bins:]
+                integ_E_tmp2 = theta_rad * (
+                    Tp_log[m][i] * Tp_log[n] * cov_xipm[i, :n_bins]
+                    + Tp_log[m][i] * Tm_log[n] * cov_xipm[i, n_bins:]
+                    + Tm_log[m][i] * Tp_log[n] * cov_xipm[n_bins + i, :n_bins]
+                    + Tm_log[m][i] * Tm_log[n] * cov_xipm[n_bins + i, n_bins:]
                 )
                 integ_E_tmp[i] = np.sum(integ_E_tmp2 * dtheta_rad)
 
                 # B-modes
-                integ_B_tmp2 = theta_rad*(
-                    Tp_log[m][i]*Tp_log[n]*cov_xipm[i, :n_bins]
-                    - Tp_log[m][i]*Tm_log[n]*cov_xipm[i, n_bins:]
-                    - Tm_log[m][i]*Tp_log[n]*cov_xipm[n_bins+i, :n_bins]
-                    + Tm_log[m][i]*Tm_log[n]*cov_xipm[n_bins+i, n_bins:]
+                integ_B_tmp2 = theta_rad * (
+                    Tp_log[m][i] * Tp_log[n] * cov_xipm[i, :n_bins]
+                    - Tp_log[m][i] * Tm_log[n] * cov_xipm[i, n_bins:]
+                    - Tm_log[m][i] * Tp_log[n] * cov_xipm[n_bins + i, :n_bins]
+                    + Tm_log[m][i] * Tm_log[n] * cov_xipm[n_bins + i, n_bins:]
                 )
                 integ_B_tmp[i] = np.sum(integ_B_tmp2 * dtheta_rad)
-            cov_En[m, n] = 1/4. * np.sum(integ_E_tmp*theta_rad * dtheta_rad)
-            cov_Bn[m, n] = 1/4. * np.sum(integ_B_tmp*theta_rad * dtheta_rad)
-            cov_EBn[m, n] = 0.
+            cov_En[m, n] = (
+                1 / 4.0 * np.sum(integ_E_tmp * theta_rad * dtheta_rad)
+            )
+            cov_Bn[m, n] = (
+                1 / 4.0 * np.sum(integ_B_tmp * theta_rad * dtheta_rad)
+            )
+            cov_EBn[m, n] = 0.0
 
-    cov_EB_full = np.empty((N_mode*2, N_mode*2), dtype=np.float64)
+    cov_EB_full = np.empty((N_mode * 2, N_mode * 2), dtype=np.float64)
     cov_EB_full[:N_mode, :N_mode] = cov_En
     cov_EB_full[N_mode:, N_mode:] = cov_Bn
     cov_EB_full[:N_mode, N_mode:] = cov_EBn

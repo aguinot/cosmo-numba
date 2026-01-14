@@ -1,4 +1,4 @@
-""" E/B decomposition
+"""E/B decomposition
 
 Compute E-/B-modes decomposition based on Schneider et al. 2022
 (https://arxiv.org/abs/2110.09774)
@@ -6,6 +6,7 @@ Compute E-/B-modes decomposition based on Schneider et al. 2022
 Author: Axel Guinot
 
 """
+
 import numba as nb
 import numpy as np
 
@@ -13,13 +14,7 @@ from cosmo_numba.math.integrate.quad import interp_quad
 
 
 @nb.njit(
-    nb.float64[:](
-        nb.float64,
-        nb.float64[:],
-        nb.float64,
-        nb.float64
-    ),
-    fastmath=True,
+    nb.float64[:](nb.float64, nb.float64[:], nb.float64, nb.float64),
 )
 def H_p(t, t_int, theta_bar, B):
     """H_p
@@ -42,22 +37,20 @@ def H_p(t, t_int, theta_bar, B):
     numpy.ndarray(float64)
         H_plus
     """
-    return 1/(8*B**3) * \
-        (
-            4*B**2
-            + 3*((t/theta_bar)**2 - 1 - B**2)
-            * ((t_int/theta_bar)**2 - 1 - B**2)
+    return (
+        1
+        / (8 * B**3)
+        * (
+            4 * B**2
+            + 3
+            * ((t / theta_bar) ** 2 - 1 - B**2)
+            * ((t_int / theta_bar) ** 2 - 1 - B**2)
         )
+    )
 
 
 @nb.njit(
-    nb.float64[:](
-        nb.float64,
-        nb.float64[:],
-        nb.float64,
-        nb.float64
-    ),
-    fastmath=True,
+    nb.float64[:](nb.float64, nb.float64[:], nb.float64, nb.float64),
 )
 def H_m(t, t_int, theta_bar, B):
     """H_m
@@ -80,22 +73,24 @@ def H_m(t, t_int, theta_bar, B):
     numpy.ndarray(float64)
         H_minus
     """
-    return (1-B)**2/(8*B**3) * \
-        (
-            3*(1-B)**2 * ((1+B)**4-(1+4*B+B**2)*(t/theta_bar)**2) *
-            (t_int/theta_bar)**(-2) +
-            (3*(1+B)**2*(t/theta_bar)**2-(3+6*B+14*B**2+6*B**3+3*B**4))
+    return (
+        (1 - B) ** 2
+        / (8 * B**3)
+        * (
+            3
+            * (1 - B) ** 2
+            * ((1 + B) ** 4 - (1 + 4 * B + B**2) * (t / theta_bar) ** 2)
+            * (t_int / theta_bar) ** (-2)
+            + (
+                3 * (1 + B) ** 2 * (t / theta_bar) ** 2
+                - (3 + 6 * B + 14 * B**2 + 6 * B**3 + 3 * B**4)
+            )
         )
+    )
 
 
 @nb.njit(
-    nb.float64[:](
-        nb.float64,
-        nb.float64[:],
-        nb.float64,
-        nb.float64
-    ),
-    fastmath=True,
+    nb.float64[:](nb.float64, nb.float64[:], nb.float64, nb.float64),
 )
 def K_p(t, t_int, theta_bar, B):
     """K_p
@@ -118,17 +113,11 @@ def K_p(t, t_int, theta_bar, B):
     numpy.ndarray(float64)
         K_plus
     """
-    return (theta_bar/t)**2 * H_m(t, t_int, theta_bar, B)
+    return (theta_bar / t) ** 2 * H_m(t, t_int, theta_bar, B)
 
 
 @nb.njit(
-    nb.float64[:](
-        nb.float64,
-        nb.float64[:],
-        nb.float64,
-        nb.float64
-    ),
-    fastmath=True,
+    nb.float64[:](nb.float64, nb.float64[:], nb.float64, nb.float64),
 )
 def K_m(t, t_int, theta_bar, B):
     """K_m
@@ -151,27 +140,52 @@ def K_m(t, t_int, theta_bar, B):
     numpy.ndarray(float64)
         K_minus
     """
-    return (1-B**2)**2 * theta_bar**4/(t**2*t_int**2) * \
-        H_p((1-B**2)*theta_bar**2/t, (1-B**2)*theta_bar**2/t_int, theta_bar, B)
+    return (
+        (1 - B**2) ** 2
+        * theta_bar**4
+        / (t**2 * t_int**2)
+        * H_p(
+            (1 - B**2) * theta_bar**2 / t,
+            (1 - B**2) * theta_bar**2 / t_int,
+            theta_bar,
+            B,
+        )
+    )
 
 
 @nb.njit(
-    nb.types.Tuple((
-        nb.float64,
-        nb.float64,
-    ))(
+    nb.types.Tuple(
+        (
+            nb.float64,
+            nb.float64,
+        )
+    )(
         nb.float64[:],
         nb.float64[:],
         nb.float64[:],
         nb.float64,
         nb.float64,
         nb.float64,
+        nb.float64,
+        nb.float64,
+        nb.int64,
         nb.float64,
         nb.float64,
     ),
-    fastmath=True,
 )
-def get_S(theta_int, xip_int, xim_int, t, tmin, tmax, theta_bar, B):
+def get_S(
+    theta_int,
+    xip_int,
+    xim_int,
+    t,
+    tmin,
+    tmax,
+    theta_bar,
+    B,
+    interp_order=5,
+    epsabs=1e-10,
+    epsrel=1e-10,
+):
     """get_S
 
     See Schneider et al. 2022 (https://arxiv.org/abs/2110.09774) Eq. 44 for
@@ -195,6 +209,12 @@ def get_S(theta_int, xip_int, xim_int, t, tmin, tmax, theta_bar, B):
         See Schneider et al. 2022 (https://arxiv.org/abs/2110.09774) Eq. 7.
     B : float64
         See Schneider et al. 2022 (https://arxiv.org/abs/2110.09774) Eq. 7.
+    interp_order : int
+        interpolation order used in the integrals
+    epsabs : float64
+        absolute error tolerance used in the integrals
+    epsrel : float64
+        relative error tolerance used in the integrals
 
     Returns
     -------
@@ -204,8 +224,13 @@ def get_S(theta_int, xip_int, xim_int, t, tmin, tmax, theta_bar, B):
 
     d_theta_int = np.mean(np.diff(np.log(theta_int)))
 
-    S_p_integrand = 1/theta_bar**2 * theta_int * xip_int \
+    S_p_integrand = (
+        1
+        / theta_bar**2
+        * theta_int
+        * xip_int
         * H_p(t, theta_int, theta_bar, B)
+    )
     S_p_int = interp_quad(
         np.log(theta_int[0]),
         np.log(theta_int[-1]),
@@ -213,14 +238,15 @@ def get_S(theta_int, xip_int, xim_int, t, tmin, tmax, theta_bar, B):
         S_p_integrand,
         tmin,
         tmax,
-        k=5,
+        k=interp_order,
         padding=True,
         extrap_dist=1,
         log_interp=True,
-        epsabs=1e-10, epsrel=1e-10,
+        epsabs=epsabs,
+        epsrel=epsrel,
     )[0]
 
-    S_m_integrand = 1/theta_int * xim_int * H_m(t, theta_int, theta_bar, B)
+    S_m_integrand = 1 / theta_int * xim_int * H_m(t, theta_int, theta_bar, B)
     S_m_int = interp_quad(
         np.log(theta_int[0]),
         np.log(theta_int[-1]),
@@ -228,33 +254,50 @@ def get_S(theta_int, xip_int, xim_int, t, tmin, tmax, theta_bar, B):
         S_m_integrand,
         tmin,
         tmax,
-        k=5,
+        k=interp_order,
         padding=True,
         extrap_dist=1,
         log_interp=True,
-        epsabs=1e-10, epsrel=1e-10,
+        epsabs=epsabs,
+        epsrel=epsrel,
     )[0]
 
     return S_p_int, S_m_int
 
 
 @nb.njit(
-    nb.types.Tuple((
-        nb.float64,
-        nb.float64,
-    ))(
+    nb.types.Tuple(
+        (
+            nb.float64,
+            nb.float64,
+        )
+    )(
         nb.float64[:],
         nb.float64[:],
         nb.float64[:],
         nb.float64,
         nb.float64,
         nb.float64,
+        nb.float64,
+        nb.float64,
+        nb.int64,
         nb.float64,
         nb.float64,
     ),
-    fastmath=True,
 )
-def get_V(theta_int, xip_int, xim_int, t, tmin, tmax, theta_bar, B):
+def get_V(
+    theta_int,
+    xip_int,
+    xim_int,
+    t,
+    tmin,
+    tmax,
+    theta_bar,
+    B,
+    interp_order=5,
+    epsabs=1e-10,
+    epsrel=1e-10,
+):
     """get_V
 
     See Schneider et al. 2022 (https://arxiv.org/abs/2110.09774) Eq. 50 for
@@ -278,6 +321,12 @@ def get_V(theta_int, xip_int, xim_int, t, tmin, tmax, theta_bar, B):
         See Schneider et al. 2022 (https://arxiv.org/abs/2110.09774) Eq. 7.
     B : float64
         See Schneider et al. 2022 (https://arxiv.org/abs/2110.09774) Eq. 7.
+    interp_order : int
+        interpolation order used in the integrals
+    epsabs : float64
+        absolute error tolerance used in the integrals
+    epsrel : float64
+        relative error tolerance used in the integrals
 
     Returns
     -------
@@ -287,8 +336,13 @@ def get_V(theta_int, xip_int, xim_int, t, tmin, tmax, theta_bar, B):
 
     d_theta_int = np.mean(np.diff(np.log(theta_int)))
 
-    V_p_integrand = 1/theta_bar**2 * theta_int * xip_int \
+    V_p_integrand = (
+        1
+        / theta_bar**2
+        * theta_int
+        * xip_int
         * K_p(t, theta_int, theta_bar, B)
+    )
     V_p_int = interp_quad(
         np.log(theta_int[0]),
         np.log(theta_int[-1]),
@@ -296,15 +350,21 @@ def get_V(theta_int, xip_int, xim_int, t, tmin, tmax, theta_bar, B):
         V_p_integrand,
         tmin,
         tmax,
-        k=5,
+        k=interp_order,
         padding=True,
         extrap_dist=1,
         log_interp=True,
-        epsabs=1e-10, epsrel=1e-10,
+        epsabs=epsabs,
+        epsrel=epsrel,
     )[0]
 
-    V_m_integrand = 1/theta_bar**2 * theta_int * xim_int \
+    V_m_integrand = (
+        1
+        / theta_bar**2
+        * theta_int
+        * xim_int
         * K_m(t, theta_int, theta_bar, B)
+    )
     V_m_int = interp_quad(
         np.log(theta_int[0]),
         np.log(theta_int[-1]),
@@ -312,41 +372,29 @@ def get_V(theta_int, xip_int, xim_int, t, tmin, tmax, theta_bar, B):
         V_m_integrand,
         tmin,
         tmax,
-        k=5,
+        k=interp_order,
         padding=True,
         extrap_dist=1,
         log_interp=True,
-        epsabs=1e-10, epsrel=1e-10,
+        epsabs=epsabs,
+        epsrel=epsrel,
     )[0]
 
     return V_p_int, V_m_int
 
 
-@nb.njit(
-    nb.types.Tuple((
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:],
-    ))(
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64,
-        nb.float64,
-    ),
-    fastmath=True,
-    # parallel=True,
-)
-def get_pure_EB_modes(
-    theta, xip, xim,
-    theta_int, xip_int, xim_int,
-    tmin, tmax
+def _get_pure_EB_modes(
+    theta,
+    xip,
+    xim,
+    theta_int,
+    xip_int,
+    xim_int,
+    tmin,
+    tmax,
+    interp_order=5,
+    epsabs=1e-10,
+    epsrel=1e-10,
 ):
     """get_pure_EB_modes
 
@@ -372,6 +420,12 @@ def get_pure_EB_modes(
         lower bound used for theta in the integrals
     tmax : float64
         upper bound used for theta in the integrals
+    interp_order : int
+        interpolation order used in the integrals
+    epsabs : float64
+        absolute error tolerance used in the integrals
+    epsrel : float64
+        relative error tolerance used in the integrals
 
     Returns
     -------
@@ -389,82 +443,265 @@ def get_pure_EB_modes(
 
     d_theta_int = np.mean(np.diff(np.log(theta_int)))
 
-    theta_bar = (tmax + tmin)/2
-    B = (tmax - tmin)/(tmax + tmin)
+    theta_bar = (tmax + tmin) / 2
+    B = (tmax - tmin) / (tmax + tmin)
 
     for i in nb.prange(n_theta):
         t = theta[i]
 
         # xi_p
-        m_int = (t < theta_int) & (theta_int < tmax)
-        integrand = 1/theta_int[m_int] * xim_int[m_int] \
-            * (4 - 12*t**2/theta_int[m_int]**2)
+        m_int = (t < theta_int) & (theta_int <= tmax)
+        if sum(m_int) == 0:
+            int_tmp = 0.0
+        else:
+            integrand = (
+                1
+                / theta_int[m_int]
+                * xim_int[m_int]
+                * (4 - 12 * t**2 / theta_int[m_int] ** 2)
+            )
 
-        int_tmp = interp_quad(
-            np.log(theta_int[m_int][0]),
-            np.log(theta_int[m_int][-1]),
-            d_theta_int,
-            integrand,
-            t,
-            tmax,
-            k=5,
-            padding=True,
-            extrap_dist=1,
-            log_interp=True,
-            epsabs=1e-10, epsrel=1e-10,
-        )[0]
+            int_tmp = interp_quad(
+                np.log(theta_int[m_int][0]),
+                np.log(theta_int[m_int][-1]),
+                d_theta_int,
+                integrand,
+                t,
+                tmax,
+                k=interp_order,
+                padding=True,
+                extrap_dist=1,
+                log_interp=True,
+                epsabs=epsabs,
+                epsrel=epsrel,
+            )[0]
 
-        m_int = (theta_int > tmin) & (theta_int < tmax)
-        S_p_int, S_m_int = get_S(
-            theta_int[m_int], xip_int[m_int], xim_int[m_int],
-            t, tmin, tmax,
-            theta_bar, B,
+        m_int = (theta_int >= tmin) & (theta_int <= tmax)
+        if sum(m_int) == 0:
+            S_p_int = 0.0
+            S_m_int = 0.0
+        else:
+            S_p_int, S_m_int = get_S(
+                theta_int[m_int],
+                xip_int[m_int],
+                xim_int[m_int],
+                t,
+                tmin,
+                tmax,
+                theta_bar,
+                B,
+                interp_order=interp_order,
+                epsabs=epsabs,
+                epsrel=epsrel,
+            )
+
+        xip_E[i] = 0.5 * (xip[i] + xim[i] + int_tmp) - 0.5 * (
+            S_p_int + S_m_int
         )
-
-        xip_E[i] = 0.5*(xip[i] + xim[i] + int_tmp) - 0.5*(S_p_int + S_m_int)
-        xip_B[i] = 0.5*(xip[i] - xim[i] - int_tmp) - 0.5*(S_p_int - S_m_int)
+        xip_B[i] = 0.5 * (xip[i] - xim[i] - int_tmp) - 0.5 * (
+            S_p_int - S_m_int
+        )
         xip_amb[i] = S_p_int
 
         # xi_m
-        m_int = (t > theta_int) & (theta_int > tmin)
-        integrand = theta_int[m_int]/t**2 * xip_int[m_int] \
-            * (4 - 12*theta_int[m_int]**2/t**2)
+        m_int = (t > theta_int) & (theta_int >= tmin)
+        if sum(m_int) == 0:
+            int_tmp = 0.0
+        else:
+            integrand = (
+                theta_int[m_int]
+                / t**2
+                * xip_int[m_int]
+                * (4 - 12 * theta_int[m_int] ** 2 / t**2)
+            )
 
-        int_tmp = interp_quad(
-            np.log(theta_int[m_int][0]),
-            np.log(theta_int[m_int][-1]),
-            d_theta_int,
-            integrand,
-            tmin,
-            t,
-            k=5,
-            padding=True,
-            extrap_dist=1,
-            log_interp=True,
-            epsabs=1e-10, epsrel=1e-10,
-        )[0]
+            int_tmp = interp_quad(
+                np.log(theta_int[m_int][0]),
+                np.log(theta_int[m_int][-1]),
+                d_theta_int,
+                integrand,
+                tmin,
+                t,
+                k=interp_order,
+                padding=True,
+                extrap_dist=1,
+                log_interp=True,
+                epsabs=epsabs,
+                epsrel=epsrel,
+            )[0]
 
-        m_int = (theta_int > tmin) & (theta_int < tmax)
-        V_p_int, V_m_int = get_V(
-            theta_int[m_int], xip_int[m_int], xim_int[m_int],
-            t, tmin, tmax,
-            theta_bar, B,
+        m_int = (theta_int >= tmin) & (theta_int <= tmax)
+        if sum(m_int) == 0:
+            V_p_int = 0.0
+            V_m_int = 0.0
+        else:
+            V_p_int, V_m_int = get_V(
+                theta_int[m_int],
+                xip_int[m_int],
+                xim_int[m_int],
+                t,
+                tmin,
+                tmax,
+                theta_bar,
+                B,
+                interp_order=interp_order,
+                epsabs=epsabs,
+                epsrel=epsrel,
+            )
+
+        xim_E[i] = 0.5 * (xip[i] + xim[i] + int_tmp) - 0.5 * (
+            V_p_int + V_m_int
         )
-
-        xim_E[i] = 0.5*(xip[i] + xim[i] + int_tmp) - 0.5*(V_p_int + V_m_int)
-        xim_B[i] = 0.5*(xip[i] - xim[i] + int_tmp) - 0.5*(V_p_int - V_m_int)
+        xim_B[i] = 0.5 * (xip[i] - xim[i] + int_tmp) - 0.5 * (
+            V_p_int - V_m_int
+        )
         xim_amb[i] = V_m_int
 
     return xip_E, xim_E, xip_B, xim_B, xip_amb, xim_amb
 
 
+_get_pure_EB_modes_serial = nb.njit(
+    nb.types.Tuple(
+        (
+            nb.float64[:],
+            nb.float64[:],
+            nb.float64[:],
+            nb.float64[:],
+            nb.float64[:],
+            nb.float64[:],
+        )
+    )(
+        nb.float64[:],
+        nb.float64[:],
+        nb.float64[:],
+        nb.float64[:],
+        nb.float64[:],
+        nb.float64[:],
+        nb.float64,
+        nb.float64,
+        nb.int64,
+        nb.float64,
+        nb.float64,
+    ),
+)(_get_pure_EB_modes)
+
+_get_pure_EB_modes_parallel = nb.njit(
+    nb.types.Tuple(
+        (
+            nb.float64[:],
+            nb.float64[:],
+            nb.float64[:],
+            nb.float64[:],
+            nb.float64[:],
+            nb.float64[:],
+        )
+    )(
+        nb.float64[:],
+        nb.float64[:],
+        nb.float64[:],
+        nb.float64[:],
+        nb.float64[:],
+        nb.float64[:],
+        nb.float64,
+        nb.float64,
+        nb.int64,
+        nb.float64,
+        nb.float64,
+    ),
+    parallel=True,
+)(_get_pure_EB_modes)
+
+
+def get_pure_EB_modes(
+    theta,
+    xip,
+    xim,
+    theta_int,
+    xip_int,
+    xim_int,
+    tmin,
+    tmax,
+    parallel=False,
+    interp_order=5,
+    epsabs=1e-10,
+    epsrel=1e-10,
+):
+    """get_pure_EB_modes
+
+    Helper function to enable/disable parallelization.
+
+    Parameters
+    ----------
+    theta : numpy.ndarray(float64)
+        theta in arcmin
+    xip : numpy.ndarray(float64)
+        xi_plus
+    xim : numpy.ndarray(float64)
+        xi_minus
+    theta_int : numpy.ndarray(float64)
+        theta used to cimpute the integrals in arcmin
+    xip_int : numpy.ndarray(float64)
+        xi_plus used to compute the integrals
+    xim_int : numpy.ndarray(float64)
+        xi_minus used to compute the integrals
+    tmin : float64
+        lower bound used for theta in the integrals
+    tmax : float64
+        upper bound used for theta in the integrals
+    interp_order : int
+        interpolation order used in the integrals
+    epsabs : float64
+        absolute error tolerance used in the integrals
+    epsrel : float64
+        relative error tolerance used in the integrals
+    parallel : bool
+        If True, runs the computation in parallel using numba.prange.
+
+    Returns
+    -------
+    tuple(float64, float64, float64, float64, float64, float64)
+        xi_plus_E, xi_minus_E, xi_amb_E, xi_plus_B, xi_minus_B, xi_amb_B
+    """
+
+    if parallel:
+        return _get_pure_EB_modes_parallel(
+            theta,
+            xip,
+            xim,
+            theta_int,
+            xip_int,
+            xim_int,
+            tmin,
+            tmax,
+            interp_order=interp_order,
+            epsabs=epsabs,
+            epsrel=epsrel,
+        )
+    else:
+        return _get_pure_EB_modes_serial(
+            theta,
+            xip,
+            xim,
+            theta_int,
+            xip_int,
+            xim_int,
+            tmin,
+            tmax,
+            interp_order=interp_order,
+            epsabs=epsabs,
+            epsrel=epsrel,
+        )
+
+
 @nb.njit(
-    nb.types.Tuple((
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:],
-    ))(
+    nb.types.Tuple(
+        (
+            nb.float64[:],
+            nb.float64[:],
+            nb.float64[:],
+            nb.float64[:],
+        )
+    )(
         nb.float64[:],
         nb.float64[:],
         nb.float64[:],
@@ -474,13 +711,10 @@ def get_pure_EB_modes(
         nb.float64,
         nb.float64,
     ),
-    fastmath=True,
     # parallel=True,
 )
 def get_CNPT_EB_modes(
-    theta, xip, xim,
-    theta_int, xip_int, xim_int,
-    tmin, tmax
+    theta, xip, xim, theta_int, xip_int, xim_int, tmin, tmax
 ):
     """get_pure_EB_modes
 
@@ -525,8 +759,12 @@ def get_CNPT_EB_modes(
 
         # xi_p
         m_int = (t < theta_int) & (theta_int < tmax)
-        integrand = 1/theta_int[m_int] * xim_int[m_int] \
-            * (4 - 12*t**2/theta_int[m_int]**2)
+        integrand = (
+            1
+            / theta_int[m_int]
+            * xim_int[m_int]
+            * (4 - 12 * t**2 / theta_int[m_int] ** 2)
+        )
 
         int_tmp = interp_quad(
             np.log(theta_int[m_int][0]),
@@ -539,16 +777,21 @@ def get_CNPT_EB_modes(
             padding=True,
             extrap_dist=1,
             log_interp=True,
-            epsabs=1e-10, epsrel=1e-10,
+            epsabs=1e-10,
+            epsrel=1e-10,
         )[0]
 
-        xip_E[i] = 0.5*(xip[i] + xim[i] + int_tmp)
-        xip_B[i] = 0.5*(xip[i] - xim[i] - int_tmp)
+        xip_E[i] = 0.5 * (xip[i] + xim[i] + int_tmp)
+        xip_B[i] = 0.5 * (xip[i] - xim[i] - int_tmp)
 
         # xi_m
         m_int = (t > theta_int) & (theta_int > tmin)
-        integrand = theta_int[m_int]/t**2 * xip_int[m_int] \
-            * (4 - 12*theta_int[m_int]**2/t**2)
+        integrand = (
+            theta_int[m_int]
+            / t**2
+            * xip_int[m_int]
+            * (4 - 12 * theta_int[m_int] ** 2 / t**2)
+        )
 
         int_tmp = interp_quad(
             np.log(theta_int[m_int][0]),
@@ -561,10 +804,11 @@ def get_CNPT_EB_modes(
             padding=True,
             extrap_dist=1,
             log_interp=True,
-            epsabs=1e-10, epsrel=1e-10,
+            epsabs=1e-10,
+            epsrel=1e-10,
         )[0]
 
-        xim_E[i] = 0.5*(xip[i] + xim[i] + int_tmp)
-        xim_B[i] = 0.5*(xip[i] - xim[i] + int_tmp)
+        xim_E[i] = 0.5 * (xip[i] + xim[i] + int_tmp)
+        xim_B[i] = 0.5 * (xip[i] - xim[i] + int_tmp)
 
     return xip_E, xim_E, xip_B, xim_B

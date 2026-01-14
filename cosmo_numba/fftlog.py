@@ -2,7 +2,7 @@
 
 First imlplemented by Andrew Hamilton:
 
-http://casa.colorado.edu/~ajsh/FFTLog/
+https://jila.colorado.edu/~ajsh/FFTLog/
 
 Adapted from C in CCL:
 https://github.com/LSSTDESC/CCL/blob/master/src/ccl_fftlog.c
@@ -92,7 +92,7 @@ def compute_u_coeff(N, mu, q, L, kcrc, u):
     for m in range(int(N / 2) + 1, N):
         u[m] = np.conj(u[N - m])
     if np.mod(N, 2) == 0:
-        u[int(N / 2)] = np.real(u[int(N / 2)]) * 0.0 * 1j
+        u[int(N / 2)] = np.real(u[int(N / 2)]) + 0.0 * 1j
 
 
 @nb.njit(
