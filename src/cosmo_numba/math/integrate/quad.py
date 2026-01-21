@@ -15,7 +15,7 @@ from NumbaQuadpack import dqags
 
 from itertools import product
 
-from cosmo_numba.math.interpolate.interpolate_1D import (
+from ..interpolate.interpolate_1D import (
     nb_interp1d_func,
     spec_interp,
 )

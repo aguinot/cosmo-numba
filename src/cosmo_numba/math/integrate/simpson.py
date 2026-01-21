@@ -6,8 +6,8 @@ Author: Axel Guinot
 
 """
 
-import numba as nb
 import numpy as np
+import numba as nb
 
 
 @nb.njit(
