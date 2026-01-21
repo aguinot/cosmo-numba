@@ -14,7 +14,7 @@ Author: Axel Guinot
 import numpy as np
 import numba as nb
 
-from .math.utils import lngamma, compute_fft, compute_ifft
+from ..utils import lngamma
 
 
 @nb.njit(
@@ -132,9 +132,9 @@ def fht(N, k, pk, dim, mu, q, kcrc, noring):
     prefac_xi = one_over_2pi_dhalf * np.power(r, -dim / 2 - q)
 
     a = prefac_pk * pk
-    b = compute_fft(a)
+    b = np.fft.fft(a)
     b *= u
-    b = compute_ifft(b)
+    b = np.fft.ifft(b)
 
     for n in range(0, int(N / 2)):
         tmp = b[n]
