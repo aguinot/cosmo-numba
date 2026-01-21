@@ -1,40 +1,95 @@
-[build-system]
-requires = ["setuptools>=64.0", "wheel"]  # , "setuptools_scm[toml]>=6.2"
-build-backend = "setuptools.build_meta"
 
 [project]
-name = "cosmo_numba"
-version = "0.0.1"
-authors = [
-  { name="Axel Guinot", email="axel.guinot.astro@gmail.com" },
-]
-description = "Cosmology computation accelerated with Numba"
+name = "cosmo-numba"
 readme = "README.md"
-#requires-python = ">=3.7,<3.12"
-license = {text = "MIT"}
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+authors = [
+    { name = "Axel Guinot", email = "axel.guinot.astro@gmail.com" }
 ]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+]
+dynamic = ["version"]
+requires-python = ">=3.12"
 dependencies = [
-    "numba>0.54",
-    "numpy>=1.24.4",
-    "NumbaQuadpack @ git+https://github.com/Nicholaswogan/NumbaQuadpack.git",
-    "mpmath>=0.19",
-    "sympy>=1.12"
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/aguinot/cosmo-numba"
-"Bug Tracker" = "https://github.com/aguinot/cosmo-numba/issues"
+"Source Code" = "https://github.com/aguinot/cosmo-numba"
 
-[tool.setuptools]
-packages = [
-  "cosmo_numba",
-  "cosmo_numba.math",
-  "cosmo_numba.math.integrate",
-  "cosmo_numba.math.interpolate",
-  "cosmo_numba.kernels",
-  "cosmo_numba.B_modes"
+# On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
+[project.optional-dependencies]
+dev = [
+    "jupyter", # Clears output from Jupyter notebooks
+    "pre-commit", # Used to run checks before finalizing a git commit
+    "pytest",
+    "pytest-cov", # Used to report total code coverage
+    "ruff", # Used for static linting of files
 ]
+
+[build-system]
+requires = [
+    "setuptools>=62", # Used to build and package the Python project
+    "setuptools_scm>=6.2", # Gets release version from git. Makes it available programmatically
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "src/cosmo_numba/_version.py"
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+    "src",
+    "docs",
+]
+addopts = "--doctest-modules --doctest-glob=*.rst"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    "W",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # docstrings
+    "D101",
+    "D102",
+    "D103",
+    "D106",
+    "D206",
+    "D207",
+    "D208",
+    "D300",
+    "D417",
+    "D419",
+    # Numpy v2.0 compatibility
+    "NPY201",
+]
+ignore = [
+    "UP006", # Allow non standard library generics in type hints
+    "UP007", # Allow Union in type hints
+    "SIM114", # Allow if with same arms
+    "B028", # Allow default warning level
+    "SIM117", # Allow nested with
+    "UP015", # Allow redundant open parameters
+    "UP028", # Allow yield in for loop
+    "N",   # Ignore naming conventions
+    "I",  # Ignore import formatting
+]
+
+
+[tool.coverage.run]
+omit=["src/cosmo_numba/_version.py"]

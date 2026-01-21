@@ -446,7 +446,7 @@ spec_2d = [
 
 
 @nb.experimental.jitclass(spec_2d)
-class nb_interp2d(object):
+class nb_interp2d:
     def __init__(
         self,
         a,

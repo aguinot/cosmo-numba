@@ -12,9 +12,9 @@ import numpy as np
 
 from NumbaQuadpack import dqags
 
-from cosmo_numba.math.integrate.simpson import simpson
-from cosmo_numba.fftlog import fht
-from cosmo_numba.math.interpolate.interpolate_1D import AkimaInterp1D
+from ..math.integrate.simpson import simpson
+from ..math.integrate.fftlog import fht
+from ..math.interpolate.interpolate_1D import AkimaInterp1D
 
 
 @nb.njit(

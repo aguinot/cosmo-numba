@@ -16,7 +16,6 @@ Author: Axel Guinot
 import numpy as np
 import numba as nb
 
-
 spec_akima = [
     ("x", nb.float64[:]),
     ("y", nb.float64[:]),
@@ -28,7 +27,7 @@ spec_akima = [
 
 
 @nb.experimental.jitclass(spec_akima)
-class AkimaInterp1D(object):
+class AkimaInterp1D:
     def __init__(self, x, y):
         """Return interpolated data using Akima's method.
 
@@ -431,7 +430,7 @@ spec_1d = [
 
 
 @nb.experimental.jitclass(spec_1d)
-class nb_interp1d(object):
+class nb_interp1d:
     def __init__(
         self,
         a,
