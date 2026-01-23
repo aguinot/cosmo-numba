@@ -15,12 +15,25 @@ import numba as nb
     fastmath=True,
 )
 def numbadiff(x):
+    """
+    Compute the difference between consecutive elements of an array. Numba
+    implementation of np.diff.
+
+    Parameters
+    ----------
+    x : float64[:]
+        input array
+
+    Returns
+    -------
+    float64[:]
+        differences between consecutive elements with size len(x)-1.
+    """
     return x[1:] - x[:-1]
 
 
 @nb.njit(
     nb.float64(nb.float64[:], nb.int64, nb.int64, nb.float64[:], nb.float64),
-    fastmath=True,
 )
 def _basic_simpson(y, start, stop, x, dx):
     if start is None:
@@ -75,9 +88,27 @@ def _basic_simpson(y, start, stop, x, dx):
         nb.float64(nb.float64[:], nb.float64[:], nb.float64),
         nb.float64(nb.float64[:], nb.float64[:], nb.types.Omitted(1.0)),
     ],
-    fastmath=True,
 )
 def simpson(y, x=None, dx=1.0):
+    """
+    Integrate y using Simpson's rule. If x is provided, it is used to
+    compute the spacing between points. If not, dx is used as the spacing.
+    This is a simplified version of the scipy implementation.
+
+    Parameters
+    ----------
+    y : float64[:]
+        array to integrate
+    x : float64[:], optional
+        x values corresponding to y. If not provided, dx is used.
+    dx : float64, optional
+        spacing between points if x is not provided.
+
+    Returns
+    -------
+    float64
+        integral of y
+    """
     y = np.asarray(y)
     N = y.shape[0]
 

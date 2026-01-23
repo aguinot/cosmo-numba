@@ -28,51 +28,20 @@ spec_akima = [
 
 @nb.experimental.jitclass(spec_akima)
 class AkimaInterp1D:
+    """
+    Akima's interpolation in 1D.
+    This implementation comes from https://github.com/cgohlke/akima ported to
+    numba and adapted to a class.
+
+    Parameters
+    ----------
+    x : array_like
+        Data points, must be increasing.
+    y : array_like
+        Data values at data points x.
+    """
+
     def __init__(self, x, y):
-        """Return interpolated data using Akima's method.
-
-        This Python implementation is inspired by the Matlab(r) code by
-        N. Shamsundar. It lacks certain capabilities of the C implementation
-        such as the output array argument and interpolation along an axis of a
-        multidimensional data array.
-
-        NOTE:
-        Stolen from https://github.com/cgohlke/akima adapted to a class and
-        port to numba
-
-        Parameters
-        ----------
-        x : array like
-            1D array of monotonically increasing real values.
-        y : array like
-            N-D array of real values. y's length along the interpolation
-            axis must be equal to the length of x.
-        x_new : array like
-            New independent variables.
-        axis : int
-            Specifies axis of y along which to interpolate. Interpolation
-            defaults to last axis of y.
-        out : array
-            Optional array to receive results. Dimension at axis must equal
-            length of x.
-
-        Examples
-        --------
-        >>> interpolate([0, 1, 2], [0, 0, 1], [0.5, 1.5])
-        array([-0.125,  0.375])
-        >>> x = np.sort(np.random.random(10) * 10)
-        >>> y = np.random.normal(0.0, 0.1, size=len(x))
-        >>> z = interpolate(x, y, x)
-        >>> np.allclose(y, z)
-        True
-        >>> x = x[:10]
-        >>> y = np.reshape(y, (10, -1))
-        >>> z = np.reshape(y, (10, -1))
-        >>> interpolate(x, y, x, axis=0, out=z)
-        >>> np.allclose(y, z)
-        True
-
-        """
         self.x = x
         self.y = y
 
@@ -118,6 +87,21 @@ class AkimaInterp1D:
         ) / dx**2
 
     def eval(self, xout, left=0.0, right=0.0):
+        """
+        Return the interpolated values at xout.
+
+        Parameters
+        ----------
+        xout : array_like
+            Points where to interpolate.
+        left, right : float
+            Values to return for xout out of bounds.
+
+        Returns
+        -------
+        yout : ndarray
+            Interpolated values at xout.
+        """
         lm = xout < self.x[0]
         rm = xout > self.x[-1]
         totm = np.invert(lm | rm)
@@ -431,6 +415,33 @@ spec_1d = [
 
 @nb.experimental.jitclass(spec_1d)
 class nb_interp1d:
+    """
+    1D Interpolator using local Taylor expansions
+    This implementation comes from https://github.com/dbstein/fast_interp
+    and adapted to a numba class that can be used in jitted functions
+
+    Parameters
+    ----------
+    a : float
+        The lower bound of the interpolation region
+    b : float
+        The upper bound of the interpolation region
+    h : float
+        The grid-spacing at which f is given
+    f : ndarray
+        Data to be interpolated
+    k : int
+        Order of local Taylor expansions (1, 3, 5, 7, or 9)
+    p : bool, optional
+        Whether the dimension is taken to be periodic (default is False)
+    c : bool, optional
+        Whether the array should be padded to allow accurate close eval
+        (default is True)
+    e : int, optional
+        Extrapolation distance, how far to allow extrap, in units of h
+        (needs to be an integer, default is 0)
+    """
+
     def __init__(
         self,
         a,
@@ -442,24 +453,6 @@ class nb_interp1d:
         c=True,
         e=0,
     ):
-        """
-        a, b: the lower and upper bounds of the interpolation region
-        h:    the grid-spacing at which f is given
-        f:    data to be interpolated
-        k:    order of local taylor expansions (int, 1, 3, or 5)
-        p:    whether the dimension is taken to be periodic
-        c:    whether the array should be padded to allow accurate close eval
-        e:    extrapolation distance, how far to allow extrap, in units of h
-                (needs to be an integer)
-
-        See the documentation for interp1d
-        this function is the same, except that a, b, h, p, c, and e
-        should be lists or tuples of length 2 giving the values for each
-        dimension
-        the function behaves as in the 1d case, except that of course padding
-        is required if padding is requested in any dimension
-        """
-
         self.a = a
         self.b = b
         self.h = h
@@ -478,9 +471,17 @@ class nb_interp1d:
 
     def eval(self, xout):
         """
-        Interpolate to xout
-        For 1-D interpolation, xout must be a float
-            or a ndarray of floats
+        Return the interpolated values at xout.
+
+        Parameters
+        ----------
+        xout : array_like
+            Points where to interpolate.
+
+        Returns
+        -------
+        out : ndarray
+            Interpolated values at xout.
         """
 
         m = int(np.prod(np.array(xout.shape)))
@@ -489,21 +490,21 @@ class nb_interp1d:
         self.out = np.empty(m, dtype=self.f.dtype)
 
         if self.k == 1:
-            self.interp1d_k1()
+            self._interp1d_k1()
         elif self.k == 3:
-            self.interp1d_k3()
+            self._interp1d_k3()
         elif self.k == 5:
-            self.interp1d_k5()
+            self._interp1d_k5()
         elif self.k == 7:
-            self.interp1d_k7()
+            self._interp1d_k7()
         elif self.k == 9:
-            self.interp1d_k9()
+            self._interp1d_k9()
         else:
             raise ValueError(f"No interpolation for k={self.k}")
 
         return self.out
 
-    def interp1d_k1(self):
+    def _interp1d_k1(self):
         _interp1d_k1(
             self._f,
             self.xout,
@@ -517,7 +518,7 @@ class nb_interp1d:
             self.ub,
         )
 
-    def interp1d_k3(self):
+    def _interp1d_k3(self):
         _interp1d_k3(
             self._f,
             self.xout,
@@ -531,7 +532,7 @@ class nb_interp1d:
             self.ub,
         )
 
-    def interp1d_k5(self):
+    def _interp1d_k5(self):
         _interp1d_k5(
             self._f,
             self.xout,
@@ -545,7 +546,7 @@ class nb_interp1d:
             self.ub,
         )
 
-    def interp1d_k7(self):
+    def _interp1d_k7(self):
         _interp1d_k7(
             self._f,
             self.xout,
@@ -559,7 +560,7 @@ class nb_interp1d:
             self.ub,
         )
 
-    def interp1d_k9(self):
+    def _interp1d_k9(self):
         _interp1d_k9(
             self._f,
             self.xout,
@@ -576,7 +577,7 @@ class nb_interp1d:
 
 #########
 #########
-# This functionnal form of interp1d is meant to be use for integration
+# This functionnal form of nb_interp1d is meant to be use for integration
 # purposes. I would recommand to use the class above in a general case.
 spec_interp = nb.float64(
     nb.float64,
@@ -614,6 +615,13 @@ def nb_interp1d_func(
     space. In that case we need to know to convert the input `xout` for the
     interpolation. This is useful for a case where your function
     logarithmically spaced.
+
+    Parameters
+    ----------
+    xout : float
+        Point where to interpolate.
+    data : CPointer to float64
+        Data needed to make the interpolation (see above).
     """
 
     # data is given as a Cpointer so we cannot use `.shape` or slicing which
@@ -636,18 +644,7 @@ def nb_interp1d_func(
     _f, _o = _extrapolate1d(f, k, p, c, e)
     lb, ub = _compute_bounds1(a, b, h, p, c, e, k)
 
-    if log_interp:
-        xout = np.array(
-            [
-                np.log(xout),
-            ]
-        )
-    else:
-        xout = np.array(
-            [
-                xout,
-            ]
-        )
+    xout = np.array([np.log(xout)]) if log_interp else np.array([xout])
 
     m = int(np.prod(np.array(xout.shape)))
 

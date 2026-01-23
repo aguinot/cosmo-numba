@@ -22,6 +22,21 @@ from ..interpolate.interpolate_1D import (
 
 
 def make_signature(output_sig, *args):
+    """
+    Create function signatures for Numba JIT compilation.
+
+    Parameters
+    ----------
+    output_sig : str
+        Signature of the output type.
+    *args : list of list of str
+        Each list contains possible types for each argument.
+
+    Returns
+    -------
+    list of str
+        List of function signatures.
+    """
     output_comb = list(product(*args, repeat=1))
     sig_final = []
     for output in output_comb:
@@ -60,8 +75,7 @@ spec_interp_quad = make_signature(
 
 
 @nb.njit(
-    # spec_interp_quad,
-    fastmath=True,
+    spec_interp_quad,
 )
 def interp_quad(
     x_start,

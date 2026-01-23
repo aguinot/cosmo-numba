@@ -15,11 +15,15 @@ from NumbaQuadpack import dqags
 from ..math.integrate.simpson import simpson
 from ..math.integrate.fftlog import fht
 from ..math.interpolate.interpolate_1D import AkimaInterp1D
+from ..math.utils import extend_log_grid, pad_1D
 
 
 @nb.njit(
-    nb.float64[:](nb.float64[:], nb.float64[:], nb.float64),
-    fastmath=True,
+    nb.float64[:](
+        nb.float64[:],
+        nb.float64[:],
+        nb.float64,
+    ),
 )
 def tp_log_nb(z, roots, norm):
     """tp_log
@@ -43,11 +47,12 @@ def tp_log_nb(z, roots, norm):
         tp_log(z) for a given mode
     """
     n_z = len(z)
+    n_roots = len(roots)
     out = np.empty(n_z, dtype=np.float64)
-    for i in range(n_z):
+    for i in nb.prange(n_z):
         tmp = 1
-        for root in roots:
-            tmp *= z[i] - root
+        for j in nb.prange(n_roots):
+            tmp *= z[i] - roots[j]
         out[i] = norm * tmp
     return out
 
@@ -60,7 +65,7 @@ def tp_log_nb(z, roots, norm):
         ),
         nb.float64[:],
     ),
-    # parallel=True,
+    parallel=True,
 )
 def tp_n_log(z, roots_n, norms_n):
     """tp_n_log
@@ -74,7 +79,7 @@ def tp_n_log(z, roots_n, norms_n):
         z representing ln(theta/theta_min).
     roots_n : numba.types.ListType(numpy.ndarray(float64))
         Pre-computed roots for all modes.
-    norm : numpy.ndarray(float64)
+    norms_n : numpy.ndarray(float64)
         Pre-computed normalization for all modes.
 
     Returns
@@ -97,7 +102,6 @@ def tp_n_log(z, roots_n, norms_n):
 # computation of tm_log
 @nb.njit(
     nb.float64(nb.float64, nb.float64[:]),
-    fastmath=True,
 )
 def _tp_log_nb(z, data):
     """tp_log
@@ -123,7 +127,7 @@ def _tp_log_nb(z, data):
 
     n_roots = int(data[0])
     roots = np.empty(n_roots, dtype=np.float64)
-    for i in range(1, n_roots + 1):
+    for i in nb.prange(1, n_roots + 1):
         roots[i - 1] = data[i]
     norm = data[n_roots + 1]
 
@@ -143,7 +147,6 @@ spec_integ_tm_log = nb.float64(nb.float64, nb.types.CPointer(nb.float64))
 )
 @nb.njit(
     spec_integ_tm_log,
-    fastmath=True,
 )
 def _integrand_tm_log(y, data_integ_):
     """integrand tm_log
@@ -154,7 +157,7 @@ def _integrand_tm_log(y, data_integ_):
     ----------
     y : float64
         integration variable
-    data_integ : numba.carray(float64)
+    data_integ_ : numba.carray(float64)
         Contains the necessary information to compute tp_log
         (see `_tp_log_nb`).
 
@@ -183,8 +186,11 @@ INTEG_TM_LOG_ADDRESS = nb.experimental.function_type._get_wrapper_address(
 
 
 @nb.njit(
-    nb.float64[:](nb.float64[:], nb.float64[:], nb.float64),
-    fastmath=True,
+    nb.float64[:](
+        nb.float64[:],
+        nb.float64[:],
+        nb.float64,
+    ),
 )
 def tm_log_nb(z, roots, norm):
     """tm_log
@@ -220,7 +226,7 @@ def tm_log_nb(z, roots, norm):
 
     n_z = len(z)
     tm_log = np.empty(n_z, dtype=np.float64)
-    for i in range(n_z):
+    for i in nb.prange(n_z):
         data_integ[-1] = z[i]
         tp_z = _tp_log_nb(z[i], data)
         res_int = dqags(INTEG_TM_LOG_ADDRESS, 0.0, z[i], data=data_integ)
@@ -237,10 +243,10 @@ def tm_log_nb(z, roots, norm):
         ),
         nb.float64[:],
     ),
-    # parallel=True,
+    parallel=True,
 )
 def tm_n_log(z, roots_n, norms_n):
-    """tp_n_log
+    """tm_n_log
 
     Compute `tm_log(n, z)` for all modes `n` based on the provided roots and
     norms.
@@ -251,7 +257,7 @@ def tm_n_log(z, roots_n, norms_n):
         z representing ln(theta/theta_min).
     roots_n : numba.types.ListType(numpy.ndarray(float64))
         Pre-computed roots for all modes.
-    norm : numpy.ndarray(float64)
+    norms_n : numpy.ndarray(float64)
         Pre-computed normalization for all modes.
 
     Returns
@@ -273,14 +279,43 @@ def tm_n_log(z, roots_n, norms_n):
     nb.types.ListType(
         AkimaInterp1D.class_type.instance_type,
     )(
+        nb.int64,
+    ),
+)
+def _init_output_wnlog(N_mode):
+    Wn_log = nb.typed.List()
+    for _ in range(N_mode):
+        Wn_log.append(
+            AkimaInterp1D(
+                np.linspace(0, 1, 10),
+                np.linspace(0, 1, 10),
+            )
+        )
+    return Wn_log
+
+
+# nb.types.ListType(
+#         AkimaInterp1D.class_type.instance_type,
+#     )
+@nb.njit(
+    nb.float64[:, :](
+        nb.float64[:],
         nb.float64[:],
         nb.float64[:, :],
         nb.float64,
+        nb.float64,
+        nb.float64,
     ),
-    fastmath=True,
-    # parallel=False,
+    parallel=True,
 )
-def wn_log(theta_rad, Tp_log, q):
+def wn_log(
+    ell,
+    theta_rad,
+    Tp_log,
+    q,
+    pad_low_decades,
+    pad_high_decades,
+):
     """wn_log
 
     Compute `Wn_log(n, z)` for all modes `n` based on the provided
@@ -292,47 +327,73 @@ def wn_log(theta_rad, Tp_log, q):
 
     Parameters
     ----------
+    ell : numpy.ndarray(float64)
+        ell values where to compute Wn_log.
     theta_rad : numpy.ndarray(float64)
         Theta in radians
     Tp_log : numpy.ndarray((float64, float64))
         Pre-computed Tp_log for all modes.
+    q : float64
+        FFTLog parameter q.
+    pad_low_decades : float64
+        Number of decades to pad at low theta.
+    pad_high_decades : float64
+        Number of decades to pad at high theta.
 
     Returns
     -------
-    numba.types.ListType(AkimaInterp1D.class_type.instance_type)
-        Wn_log(n, l)
+    numpy.ndarray((float64, float64))
+        Wn_log(n, ell)
     """
 
-    nbins = int(len(theta_rad))
+    theta_rad_ext, i_low, i_high = extend_log_grid(
+        theta_rad, pad_low_decades, pad_high_decades
+    )
+
+    nbins = int(len(theta_rad_ext))
     N_mode = Tp_log.shape[0]
 
-    Wn_log = nb.typed.List()
+    # Because we are using typed.List, we need to initialize the list with the
+    # final type.
+    # Wn_log = _init_output_wnlog(N_mode)
+    Wn_log = np.empty((N_mode, len(ell)), dtype=np.float64)
     for n in nb.prange(N_mode):
-        ell_, Wn_log_tmp = fht(nbins, theta_rad, Tp_log[n], 2.0, 0.0, q, 1, 1)
-        Wn_log.append(
-            AkimaInterp1D(
-                ell_,
-                Wn_log_tmp * 2.0 * np.pi,
-            )
+        # We apply padding to Tp_log to avoid edge effects in the FFTLog.
+        # Particularly for small theta.
+        Tp_log_ext = pad_1D(nbins, i_low, i_high, Tp_log[n])
+        ell_, Wn_log_tmp = fht(
+            nbins, theta_rad_ext, Tp_log_ext, 2.0, 0.0, q, 1, 1
         )
+        interp = AkimaInterp1D(
+            ell_,
+            Wn_log_tmp * 2.0 * np.pi,
+        )
+        Wn_log[n] = interp.eval(ell)
 
     return Wn_log
 
 
-@nb.njit(
-    nb.types.Tuple((nb.float64[:], nb.float64[:]))(
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:, :],
-        nb.float64[:, :],
-        nb.int64,
-    ),
-    fastmath=True,
-    # parallel=True,
+sig_get_xipm_cosebis = nb.types.Tuple((nb.float64[:], nb.float64[:]))(
+    nb.float64[:],
+    nb.float64[:],
+    nb.float64[:],
+    nb.float64[:],
+    nb.float64[:, :],
+    nb.float64[:, :],
+    nb.int64,
 )
-def get_xipm_cosebis(theta_rad, dtheta_rad, xip, xim, Tp_log, Tm_log, N_mode):
+
+
+@nb.njit(sig_get_xipm_cosebis)
+def get_xipm_cosebis_serial(
+    theta_rad,
+    dtheta_rad,
+    xip,
+    xim,
+    Tp_log,
+    Tm_log,
+    N_mode,
+):
     """get_xipm_cosebis
 
     Compute the COSEBIs from the 2PCF xi_plus and xi_minus.
@@ -373,18 +434,24 @@ def get_xipm_cosebis(theta_rad, dtheta_rad, xip, xim, Tp_log, Tm_log, N_mode):
     return C_E, C_B
 
 
-@nb.njit(
-    nb.types.Tuple((nb.float64[:], nb.float64[:]))(
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:],
-        nb.types.ListType(AkimaInterp1D.class_type.instance_type),
-        nb.int64,
-    ),
-    fastmath=True,
-    # parallel=True,
+get_xipm_cosebis_parallel = nb.njit(
+    sig_get_xipm_cosebis,
+    parallel=True,
+)(get_xipm_cosebis_serial.py_func)
+
+
+sig_get_Cell_cosebis = nb.types.Tuple((nb.float64[:], nb.float64[:]))(
+    nb.float64[:],
+    nb.float64[:],
+    nb.float64[:],
+    # nb.types.ListType(AkimaInterp1D.class_type.instance_type),
+    nb.float64[:, :],
+    nb.int64,
 )
-def get_Cell_cosebis(ell, Cell_E, Cell_B, Wn_log, N_mode):
+
+
+@nb.njit(sig_get_Cell_cosebis)
+def get_Cell_cosebis_serial(ell, Cell_E, Cell_B, Wn_log, N_mode):
     """get_xipm_cosebis
 
     Compute the COSEBIs from the Cell E- and B-modes.
@@ -412,12 +479,17 @@ def get_Cell_cosebis(ell, Cell_E, Cell_B, Wn_log, N_mode):
     C_E = np.empty(N_mode, dtype=np.float64)
     C_B = np.empty(N_mode, dtype=np.float64)
     for n in nb.prange(N_mode):
-        integrand_E = ell * Cell_E * Wn_log[n].eval(ell) / np.pi * 0.5
-        integrand_B = ell * Cell_B * Wn_log[n].eval(ell) / np.pi * 0.5
+        integrand_E = ell * Cell_E * Wn_log[n] / np.pi * 0.5
+        integrand_B = ell * Cell_B * Wn_log[n] / np.pi * 0.5
         C_E[n] = simpson(integrand_E, ell)
         C_B[n] = simpson(integrand_B, ell)
 
     return C_E, C_B
+
+
+get_Cell_cosebis_parallel = nb.njit(sig_get_Cell_cosebis, parallel=True)(
+    get_Cell_cosebis_serial.py_func
+)
 
 
 @nb.njit(
@@ -429,8 +501,7 @@ def get_Cell_cosebis(ell, Cell_E, Cell_B, Wn_log, N_mode):
         nb.float64[:, :],
         nb.int64,
     ),
-    fastmath=True,
-    # parallel=True,
+    parallel=True,
 )
 def get_cosebis_cov_from_xipm_cov(
     theta_rad, dtheta_rad, cov_xipm, Tp_log, Tm_log, N_mode

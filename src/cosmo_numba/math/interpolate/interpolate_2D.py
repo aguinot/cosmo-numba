@@ -447,6 +447,34 @@ spec_2d = [
 
 @nb.experimental.jitclass(spec_2d)
 class nb_interp2d:
+    """
+    2D Interpolator using local Taylor expansions
+    This implementation comes from https://github.com/dbstein/fast_interp
+    and adapted to a numba class that can be used in jitted functions
+
+    Parameters
+    ----------
+    a : array_like
+        The lower bounds of the interpolation region (length 2)
+    b : array_like
+        The upper bounds of the interpolation region (length 2)
+    h : array_like
+        The grid-spacing at which f is given (length 2)
+    f : ndarray
+        Data to be interpolated
+    k : int
+        Order of local Taylor expansions (1, 3, 5, 7, or 9)
+    p : array_like, optional
+        Whether the dimensions are taken to be periodic (default is
+        [False, False])
+    c : array_like, optional
+        Whether the array should be padded to allow accurate close eval
+        (default is [True, True])
+    e : array_like, optional
+        Extrapolation distance, how far to allow extrap, in units of h
+        (needs to be an integer, default is [0, 0])
+    """
+
     def __init__(
         self,
         a,
@@ -454,36 +482,28 @@ class nb_interp2d:
         h,
         f,
         k,
-        p=np.array([False] * 2),
-        c=np.array([True] * 2),
-        e=np.array([0] * 2),
+        p=None,
+        c=None,
+        e=None,
     ):
-        """
-        a, b: the lower and upper bounds of the interpolation region
-        h:    the grid-spacing at which f is given
-        f:    data to be interpolated
-        k:    order of local taylor expansions (int, 1, 3, or 5)
-        p:    whether the dimension is taken to be periodic
-        c:    whether the array should be padded to allow accurate close eval
-        e:    extrapolation distance, how far to allow extrap, in units of h
-                (needs to be an integer)
-
-        See the documentation for interp1d
-        this function is the same, except that a, b, h, p, c, and e
-        should be lists or tuples of length 2 giving the values for each
-        dimension
-        the function behaves as in the 1d case, except that of course padding
-        is required if padding is requested in any dimension
-        """
-
         self.a = a
         self.b = b
         self.h = h
         self.f = f
         self.k = k
-        self.p = p
-        self.c = c
-        self.e = e
+        if p is None:
+            p = np.array([False] * 2)
+        else:
+            self.p = p
+        if c is None:
+            c = np.array([True] * 2)
+        else:
+            self.c = c
+        if e is None:
+            e = np.array([0] * 2)
+        else:
+            self.e = e
+
         self.n = np.array(f.shape)
         _f, _o = _extrapolate2d(f, k, p, c, e)
         self._f = _f
@@ -494,9 +514,19 @@ class nb_interp2d:
 
     def eval(self, xout, yout):
         """
-        Interpolate to xout
-        For 1-D interpolation, xout must be a float
-            or a ndarray of floats
+        Return the interpolated values at xout and yout.
+
+        Parameters
+        ----------
+        xout : array_like
+            Points where to interpolate.
+        yout : array_like
+            Points where to interpolate.
+
+        Returns
+        -------
+        out : ndarray
+            Interpolated values at xout and yout.
         """
 
         m = int(np.prod(np.array(xout.shape)))
@@ -506,21 +536,21 @@ class nb_interp2d:
         self.out = np.empty(m, dtype=self.f.dtype)
 
         if self.k == 1:
-            self.interp2d_k1()
+            self._interp2d_k1()
         elif self.k == 3:
-            self.interp2d_k3()
+            self._interp2d_k3()
         elif self.k == 5:
-            self.interp2d_k5()
+            self._interp2d_k5()
         elif self.k == 7:
-            self.interp2d_k7()
+            self._interp2d_k7()
         elif self.k == 9:
-            self.interp2d_k9()
+            self._interp2d_k9()
         else:
             raise ValueError(f"No interpolation for k={self.k}")
 
         return self.out
 
-    def interp2d_k1(self):
+    def _interp2d_k1(self):
         _interp2d_k1(
             self._f,
             self.xout,
@@ -535,7 +565,7 @@ class nb_interp2d:
             self.ub,
         )
 
-    def interp2d_k3(self):
+    def _interp2d_k3(self):
         _interp2d_k3(
             self._f,
             self.xout,
@@ -550,7 +580,7 @@ class nb_interp2d:
             self.ub,
         )
 
-    def interp2d_k5(self):
+    def _interp2d_k5(self):
         _interp2d_k5(
             self._f,
             self.xout,
@@ -565,7 +595,7 @@ class nb_interp2d:
             self.ub,
         )
 
-    def interp2d_k7(self):
+    def _interp2d_k7(self):
         _interp2d_k7(
             self._f,
             self.xout,
@@ -580,7 +610,7 @@ class nb_interp2d:
             self.ub,
         )
 
-    def interp2d_k9(self):
+    def _interp2d_k9(self):
         _interp2d_k9(
             self._f,
             self.xout,
