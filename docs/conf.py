@@ -8,7 +8,8 @@ import os
 import sys
 from importlib.metadata import version
 
-# Define path to the code to be documented **relative to where conf.py (this file) is kept**
+# Define path to the code to be documented
+# **relative to where conf.py (this file) is kept**
 sys.path.insert(0, os.path.abspath("../src/"))
 
 # -- Project information -----------------------------------------------------
@@ -24,7 +25,11 @@ version = ".".join(release.split(".")[:2])
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["sphinx.ext.mathjax", "sphinx.ext.napoleon", "sphinx.ext.viewcode"]
+extensions = [
+    "sphinx.ext.mathjax",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+]
 
 extensions.append("autoapi.extension")
 

@@ -22,6 +22,21 @@ from ..utils import lngamma
     fastmath=True,
 )
 def lngamma_4(x, y):
+    """
+    Wrapper around lngamma to return real and imaginary parts separately.
+
+    Parameters
+    ----------
+    x : float64
+        real part
+    y : float64
+        imaginary part
+
+    Returns
+    -------
+    float64, float64
+        real and imaginary parts of lngamma(x + i y)
+    """
     out = lngamma(x + y * 1j)
     return np.real(out), np.imag(out)
 
@@ -31,6 +46,21 @@ def lngamma_4(x, y):
     fastmath=True,
 )
 def polar(r, phi):
+    """
+    Create a complex number from polar coordinates.
+
+    Parameters
+    ----------
+    r : float64
+        modulus
+    phi : float64
+        phase
+
+    Returns
+    -------
+    complex128
+        complex number
+    """
     res = r * np.cos(phi) + r * np.sin(phi) * 1j
     return res
 
@@ -46,6 +76,26 @@ def polar(r, phi):
     fastmath=True,
 )
 def goodkr(N, mu, q, L, kr):
+    """
+    Find a good value of kr to minimize ringing.
+
+    Parameters
+    ----------
+    N : int64
+        number of points
+    mu : int64
+        mu parameter
+    q : int64
+        q parameter
+    L : int64
+        L parameter
+    kr : float64
+        initial kr value
+    Returns
+    -------
+    float64
+        adjusted kr value
+    """
     xp = (mu + 1 + q) / 2.0
     xm = (mu + 1 - q) / 2.0
     y = np.pi * N / (2.0 * L)
@@ -70,6 +120,25 @@ def goodkr(N, mu, q, L, kr):
     fastmath=True,
 )
 def compute_u_coeff(N, mu, q, L, kcrc, u):
+    """
+    Compute the u_m coefficients for FFTLog. These coefficients encode the
+    Bessel function convolution in Fourier space.
+
+    Parameters
+    ----------
+    N : int64
+        Number of points in the input arrays.
+    mu : int64
+        Order of the Bessel function in the Hankel transform.
+    q : float64
+        Bias parameter controlling the power-law tilt.
+    L : float64
+        Logarithmic interval size.
+    kcrc : float64
+        Parameter controlling the mapping between k and r (usually set to 1.0).
+    u : complex128[:]
+        Output array to store the u_m coefficients.
+    """
     y = np.pi / L
     k0r0 = kcrc * np.exp(-L)
     t = -2.0 * y * np.log(k0r0 / 2.0)
@@ -114,6 +183,35 @@ def compute_u_coeff(N, mu, q, L, kcrc, u):
     fastmath=True,
 )
 def fht(N, k, pk, dim, mu, q, kcrc, noring):
+    """
+    Perform a FFTLog-based Hankel transform.
+
+    Parameters
+    ----------
+    N : int64
+        Number of points in the input arrays.
+    k : float64[:]
+        Wavenumber array
+    pk : float64[:]
+        Power spectrum array P(k).
+    dim : int64
+        Dimension of the transform
+    mu : int64
+        Order of the Bessel function in the Hankel transform.
+    q : int64
+        Bias parameter controlling the power-law tilt.
+    kcrc : float64
+        Parameter controlling the mapping between k and r (usually set to 1.0).
+    noring : int64
+        If True, adjust kcrc to minimize ringing.
+
+    Returns
+    -------
+    r : float64[:]
+        Output distance array.
+    xi : float64[:]
+        Transformed correlation function array xi(r).
+    """
     L = np.log(k[N - 1] / k[0]) * N / (N - 1.0)
     if noring:
         kcrc = goodkr(N, mu, q, L, kcrc)
