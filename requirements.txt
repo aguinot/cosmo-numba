@@ -1,5 +1,6 @@
-numpy
-numba>=0.54
-NumbaQuadpack
+numba>0.54
+numpy>=1.24.4
+NumbaQuadpack @ git+https://github.com/Nicholaswogan/NumbaQuadpack.git
 mpmath>=0.19
-sympy
+sympy>=1.12
+rocket-fft

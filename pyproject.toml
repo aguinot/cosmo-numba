@@ -49,7 +49,7 @@ testpaths = [
 addopts = "--doctest-modules --doctest-glob=*.rst"
 
 [tool.ruff]
-line-length = 110
+line-length = 79
 target-version = "py312"
 [tool.ruff.lint]
 select = [
