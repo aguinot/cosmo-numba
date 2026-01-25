@@ -29,6 +29,11 @@ dev = [
     "pytest-cov", # Used to report total code coverage
     "ruff", # Used for static linting of files
 ]
+test = [
+    "pytest",
+    "pytest-cov",
+    "scipy",
+]
 
 [build-system]
 requires = [
