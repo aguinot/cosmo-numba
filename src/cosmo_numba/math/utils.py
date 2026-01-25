@@ -114,3 +114,25 @@ def pad_1D(N_theta_ext, i_low, i_high, f_theta):
     f_theta_ext = np.zeros(N_theta_ext)
     f_theta_ext[i_low:i_high] = f_theta
     return f_theta_ext
+
+
+@nb.njit(
+    nb.float64[:](nb.float64[:]),
+    fastmath=True,
+)
+def numbadiff(x):
+    """
+    Compute the difference between consecutive elements of an array. Numba
+    implementation of np.diff.
+
+    Parameters
+    ----------
+    x : float64[:]
+        input array
+
+    Returns
+    -------
+    float64[:]
+        differences between consecutive elements with size len(x)-1.
+    """
+    return x[1:] - x[:-1]
