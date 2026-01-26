@@ -3,15 +3,19 @@ import numba as nb
 
 
 @nb.njit(
-    nb.complex128(nb.complex128),
     fastmath=True,
 )
 def lngamma(z):
     """
-    Numerical Recipes 6.1
+    Implementation of the logarithm of the gamma function from Numerical
+    Recipes 6.1 with correction for Re(z) < 0..
 
     From: https://stackoverflow.com/questions/55048299/why-is-this-log-gamma-numba-function-slower-than-scipy-for-large-arrays-but-fas
     """
+
+    # reflection for left half-plane
+    if z.real < 0.5:
+        return np.log(np.pi) - np.log(np.sin(np.pi * z)) - lngamma(1.0 - z)
 
     coefs = np.array(
         [
@@ -37,7 +41,7 @@ def lngamma(z):
     tmp = (z + 0.5) * np.log(tmp) - tmp
     ser = 0.999999999999997092
 
-    n = coefs.shape[0]
+    n = coefs.size
     for j in range(n):
         y = y + 1.0
         ser = ser + coefs[j] / y
@@ -46,13 +50,26 @@ def lngamma(z):
     return out
 
 
-@nb.njit(
-    nb.types.Tuple((nb.float64[:], nb.int64, nb.int64))(
-        nb.float64[:],
-        nb.float64,
-        nb.float64,
-    ),
-)
+@nb.njit
+def numbadiff(x):
+    """
+    Compute the difference between consecutive elements of an array. Numba
+    implementation of np.diff.
+
+    Parameters
+    ----------
+    x : float64[:]
+        input array
+
+    Returns
+    -------
+    float64[:]
+        differences between consecutive elements with size len(x)-1.
+    """
+    return x[1:] - x[:-1]
+
+
+@nb.njit
 def extend_log_grid(theta, pad_low_decades=2.0, pad_high_decades=2.0):
     """
     Extend a log-spaced theta grid using its native log spacing.
@@ -74,7 +91,7 @@ def extend_log_grid(theta, pad_low_decades=2.0, pad_high_decades=2.0):
     theta = np.asarray(theta)
 
     # Get log-spacing
-    dln = np.median(np.diff(np.log(theta)))
+    dln = np.median(numbadiff(np.log(theta)))
 
     # Number of points to pad
     n_low = int(np.round(pad_low_decades * np.log(10.0) / dln))
@@ -98,14 +115,7 @@ def extend_log_grid(theta, pad_low_decades=2.0, pad_high_decades=2.0):
     return theta_ext, n_low, n_low + theta.size
 
 
-@nb.njit(
-    nb.float64[:](
-        nb.int64,
-        nb.int64,
-        nb.int64,
-        nb.float64[:],
-    ),
-)
+@nb.njit
 def pad_1D(N_theta_ext, i_low, i_high, f_theta):
     """
     Extend f(theta) into an extended theta grid.
@@ -114,25 +124,3 @@ def pad_1D(N_theta_ext, i_low, i_high, f_theta):
     f_theta_ext = np.zeros(N_theta_ext)
     f_theta_ext[i_low:i_high] = f_theta
     return f_theta_ext
-
-
-@nb.njit(
-    nb.float64[:](nb.float64[:]),
-    fastmath=True,
-)
-def numbadiff(x):
-    """
-    Compute the difference between consecutive elements of an array. Numba
-    implementation of np.diff.
-
-    Parameters
-    ----------
-    x : float64[:]
-        input array
-
-    Returns
-    -------
-    float64[:]
-        differences between consecutive elements with size len(x)-1.
-    """
-    return x[1:] - x[:-1]
