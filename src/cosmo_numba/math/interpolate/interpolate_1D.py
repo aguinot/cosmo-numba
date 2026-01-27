@@ -16,9 +16,13 @@ Author: Axel Guinot
 import numpy as np
 import numba as nb
 
+from ..utils import numbadiff
+
 spec_akima = [
     ("x", nb.float64[:]),
     ("y", nb.float64[:]),
+    ("left", nb.float64),
+    ("right", nb.float64),
     ("n", nb.int64),
     ("b", nb.float64[:]),
     ("c", nb.float64[:]),
@@ -32,6 +36,8 @@ class AkimaInterp1D:
     Akima's interpolation in 1D.
     This implementation comes from https://github.com/cgohlke/akima ported to
     numba and adapted to a class.
+    Extrapolation is set to 0.0 by default but can be changed with the
+    `update_extrapolation` method.
 
     Parameters
     ----------
@@ -44,6 +50,8 @@ class AkimaInterp1D:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.left = 0.0
+        self.right = 0.0
 
         self.n = len(x)
         if self.n < 3:
@@ -51,11 +59,11 @@ class AkimaInterp1D:
         if self.n != len(y):
             raise ValueError("size of x-array must match data shape")
 
-        dx = np.diff(x)
+        dx = numbadiff(self.x)
         if np.any(dx <= 0.0):
             raise ValueError("x-axis not valid")
 
-        m = np.diff(y) / dx
+        m = numbadiff(self.y) / dx
         mm = 2.0 * m[0] - m[1]
         mmm = 2.0 * mm - m[0]
         mp = 2.0 * m[self.n - 2] - m[self.n - 3]
@@ -68,7 +76,7 @@ class AkimaInterp1D:
 
         m1 = np.concatenate((mmm, mm, m, mp, mpp))
 
-        dm = np.abs(np.diff(m1))
+        dm = np.abs(numbadiff(m1))
         f1 = dm[2 : self.n + 2]
         f2 = dm[0 : self.n]
         f12 = f1 + f2
@@ -86,7 +94,21 @@ class AkimaInterp1D:
             self.b[0 : self.n - 1] + self.b[1 : self.n] - 2.0 * m
         ) / dx**2
 
-    def eval(self, xout, left=0.0, right=0.0):
+    def update_extrapolation(self, left, right):
+        """
+        Update the values to return when extrapolating.
+        We have to do it this way because numba jitclass do not support keyword
+        arguments in methods.
+
+        Parameters
+        ----------
+        left, right : float
+            Values to return for when extrapolating.
+        """
+        self.left = left
+        self.right = right
+
+    def eval(self, xout):
         """
         Return the interpolated values at xout.
 
@@ -94,8 +116,6 @@ class AkimaInterp1D:
         ----------
         xout : array_like
             Points where to interpolate.
-        left, right : float
-            Values to return for xout out of bounds.
 
         Returns
         -------
@@ -108,9 +128,9 @@ class AkimaInterp1D:
 
         yout = np.zeros_like(xout)
 
-        # Do something better for interpolation
-        yout[lm] = left
-        yout[rm] = right
+        # Do something better for extrapolation
+        yout[lm] = self.left
+        yout[rm] = self.right
 
         bins = np.digitize(xout[totm], self.x)
         bins = np.minimum(bins, self.n - 1) - 1
@@ -403,6 +423,7 @@ spec_1d = [
     ("p", nb.boolean),
     ("c", nb.boolean),
     ("e", nb.int64),
+    ("log_interp", nb.boolean),
     ("n", nb.int64),
     ("_f", nb.float64[:]),
     ("_o", nb.int64),
@@ -440,6 +461,8 @@ class nb_interp1d:
     e : int, optional
         Extrapolation distance, how far to allow extrap, in units of h
         (needs to be an integer, default is 0)
+    log_interp : bool, optional
+        Whether to perform the interpolation in log-space (default is False)
     """
 
     def __init__(
@@ -452,6 +475,7 @@ class nb_interp1d:
         p=False,
         c=True,
         e=0,
+        log_interp=False,
     ):
         self.a = a
         self.b = b
@@ -461,6 +485,7 @@ class nb_interp1d:
         self.p = p
         self.c = c
         self.e = e
+        self.log_interp = log_interp
         self.n = f.shape[0]
         _f, _o = _extrapolate1d(f, k, p, c, e)
         self._f = _f
@@ -486,7 +511,7 @@ class nb_interp1d:
 
         m = int(np.prod(np.array(xout.shape)))
 
-        self.xout = xout
+        self.xout = np.log(xout) if self.log_interp else xout
         self.out = np.empty(m, dtype=self.f.dtype)
 
         if self.k == 1:
