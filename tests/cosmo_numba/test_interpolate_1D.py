@@ -172,16 +172,19 @@ class TestAkimaInterp1D:
         """
         x = np.linspace(0.0, 1.0, 10, dtype=np.float64)
         y = np.linspace(0.0, 1.0, 10, dtype=np.float64)
-        ak_0 = AkimaInterp1D(x, y)
-        ak_1 = AkimaInterp1D(x, y, left=1.0, right=1.0)
+        ak = AkimaInterp1D(x, y)
 
         xi_r = np.array([2.0])
         xi_l = np.array([-1.0])
 
-        assert_allclose(ak_0.eval(xi_r), np.array([0.0]))
-        assert_allclose(ak_0.eval(xi_l), np.array([0.0]))
-        assert_allclose(ak_1.eval(xi_r), np.array([1.0]))
-        assert_allclose(ak_1.eval(xi_l), np.array([1.0]))
+        assert_allclose(ak.eval(xi_r), np.array([0.0]))
+        assert_allclose(ak.eval(xi_l), np.array([0.0]))
+
+        # Now update extrapolation values
+        ak.update_extrapolation(1.0, 1.0)
+
+        assert_allclose(ak.eval(xi_r), np.array([1.0]))
+        assert_allclose(ak.eval(xi_l), np.array([1.0]))
 
     def test_raised_errors(self):
         """

@@ -36,6 +36,8 @@ class AkimaInterp1D:
     Akima's interpolation in 1D.
     This implementation comes from https://github.com/cgohlke/akima ported to
     numba and adapted to a class.
+    Extrapolation is set to 0.0 by default but can be changed with the
+    `update_extrapolation` method.
 
     Parameters
     ----------
@@ -43,15 +45,13 @@ class AkimaInterp1D:
         Data points, must be increasing.
     y : array_like
         Data values at data points x.
-    left, right : float
-            Values to return for xout out of bounds.
     """
 
-    def __init__(self, x, y, left=0.0, right=0.0):
+    def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.left = left
-        self.right = right
+        self.left = 0.0
+        self.right = 0.0
 
         self.n = len(x)
         if self.n < 3:
@@ -93,6 +93,20 @@ class AkimaInterp1D:
         self.d = (
             self.b[0 : self.n - 1] + self.b[1 : self.n] - 2.0 * m
         ) / dx**2
+
+    def update_extrapolation(self, left, right):
+        """
+        Update the values to return when extrapolating.
+        We have to do it this way because numba jitclass do not support keyword
+        arguments in methods.
+
+        Parameters
+        ----------
+        left, right : float
+            Values to return for when extrapolating.
+        """
+        self.left = left
+        self.right = right
 
     def eval(self, xout):
         """
