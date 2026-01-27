@@ -62,7 +62,7 @@ def test_fftlog_plaw(mu, alpha):
     The d-D Hankel transform of k^{-alpha} is:
     .. math::
         f(r) = \Gamma[(d - \alpha + \mu) / 2] / \Gamma[(\alpha + \mu) / 2] / (\pi^{d/2} * 2^\alpha * r^{d-\alpha})
-    """
+    """  # noqa: E501
 
     dim = 2
     nk_ = 1024
