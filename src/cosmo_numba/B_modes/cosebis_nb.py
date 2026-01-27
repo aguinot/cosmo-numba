@@ -275,25 +275,6 @@ def tm_n_log(z, roots_n, norms_n):
     return arr_tm_n_log
 
 
-@nb.njit(
-    nb.types.ListType(
-        AkimaInterp1D.class_type.instance_type,
-    )(
-        nb.int64,
-    ),
-)
-def _init_output_wnlog(N_mode):
-    Wn_log = nb.typed.List()
-    for _ in range(N_mode):
-        Wn_log.append(
-            AkimaInterp1D(
-                np.linspace(0, 1, 10),
-                np.linspace(0, 1, 10),
-            )
-        )
-    return Wn_log
-
-
 # nb.types.ListType(
 #         AkimaInterp1D.class_type.instance_type,
 #     )
