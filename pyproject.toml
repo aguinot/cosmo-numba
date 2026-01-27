@@ -91,6 +91,8 @@ ignore = [
     "I",  # Ignore import formatting
 ]
 
-
 [tool.coverage.run]
-omit=["src/cosmo_numba/_version.py"]
+omit=[
+    "src/cosmo_numba/_version.py",
+    "src/cosmo_numba/math/interpolate/interpolate_2D.py",
+]

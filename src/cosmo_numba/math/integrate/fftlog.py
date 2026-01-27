@@ -182,7 +182,7 @@ def compute_u_coeff(N, mu, q, L, kcrc, u):
     ),
     fastmath=True,
 )
-def fht(N, k, pk, dim, mu, q, kcrc, noring):
+def fht(N, k, pk, dim, mu, q_, kcrc, noring):
     """
     Perform a FFTLog-based Hankel transform.
 
@@ -198,8 +198,10 @@ def fht(N, k, pk, dim, mu, q, kcrc, noring):
         Dimension of the transform
     mu : int64
         Order of the Bessel function in the Hankel transform.
-    q : int64
+    q_ : int64
         Bias parameter controlling the power-law tilt.
+        Internally CCL compute epsilon = 0.5 * dim + q_ and uses epsilon as
+        bias parameter.
     kcrc : float64
         Parameter controlling the mapping between k and r (usually set to 1.0).
     noring : int64
@@ -212,6 +214,10 @@ def fht(N, k, pk, dim, mu, q, kcrc, noring):
     xi : float64[:]
         Transformed correlation function array xi(r).
     """
+
+    # Computed as epsilon in CCL
+    q = 0.5 * dim + q_
+
     L = np.log(k[N - 1] / k[0]) * N / (N - 1.0)
     if noring:
         kcrc = goodkr(N, mu, q, L, kcrc)
@@ -229,7 +235,7 @@ def fht(N, k, pk, dim, mu, q, kcrc, noring):
     one_over_2pi_dhalf = pow(2 * np.pi, -dim / 2)
     prefac_xi = one_over_2pi_dhalf * np.power(r, -dim / 2 - q)
 
-    a = prefac_pk * pk
+    a = np.asarray(prefac_pk * pk + 0.0 * 1j, dtype=np.complex128)
     b = np.fft.fft(a)
     b *= u
     b = np.fft.ifft(b)
