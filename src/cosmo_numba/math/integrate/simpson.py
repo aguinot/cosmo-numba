@@ -12,9 +12,7 @@ import numba as nb
 from ..utils import numbadiff
 
 
-@nb.njit(
-    nb.float64(nb.float64[:], nb.int64, nb.int64, nb.float64[:], nb.float64),
-)
+@nb.njit
 def _basic_simpson(y, start, stop, x, dx):
     if start is None:
         start = 0
@@ -63,12 +61,7 @@ def _basic_simpson(y, start, stop, x, dx):
     return result
 
 
-@nb.njit(
-    [
-        nb.float64(nb.float64[:], nb.float64[:], nb.float64),
-        nb.float64(nb.float64[:], nb.float64[:], nb.types.Omitted(1.0)),
-    ],
-)
+@nb.njit
 def simpson(y, x=None, dx=1.0):
     """
     Integrate y using Simpson's rule. If x is provided, it is used to
