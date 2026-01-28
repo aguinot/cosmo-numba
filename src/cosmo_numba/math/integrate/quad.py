@@ -75,7 +75,7 @@ spec_interp_quad = make_signature(
 
 
 @nb.njit(
-    spec_interp_quad,
+    # spec_interp_quad,
 )
 def interp_quad(
     x_start,
