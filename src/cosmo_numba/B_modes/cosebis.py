@@ -57,28 +57,24 @@ class COSEBIS:
 
         self.tmin = theta_min
         self.tmax = theta_max
+
+        if not isinstance(N_max, int):
+            raise TypeError("N_max should be an integer.")
         self.Nmax = N_max
 
-    def _compute_roots(self, use_nsolve=False):
-        with mp.workdps(self.precision):
-            self.compute_roots(use_nsolve=use_nsolve)
-
-    def compute_roots(self, use_nsolve=False):
+    def compute_roots(self):
         """
         Initialize the COSEBIs by computing the roots and normalization.
-
-        Parameters
-        ----------
-        use_nsolve : bool, optional
-            use `nsolve` (slower) instead of `nroots`, by default False.
         """
+        with mp.workdps(self.precision):
+            self._compute_roots()
 
+    def _compute_roots(self):
         all_roots, all_norms = compute_roots_norms(
             self.Nmax,
             self.tmin,
             self.tmax,
             self.precision,
-            use_nsolve=use_nsolve,
         )
         self._raw_roots = all_roots
         self._raw_norms = all_norms
@@ -114,7 +110,7 @@ class COSEBIS:
         """
         if (roots is None) and (norms is None):
             if not hasattr(self, "roots"):
-                self._compute_roots()
+                self.compute_roots()
             roots = self.roots
             norms = self.norms
         elif (roots is None) ^ (norms is None):
@@ -150,7 +146,7 @@ class COSEBIS:
         """
         if (roots is None) and (norms is None):
             if not hasattr(self, "roots"):
-                self._compute_roots()
+                self.compute_roots()
             roots = self.roots
             norms = self.norms
         elif (roots is None) ^ (norms is None):
@@ -227,7 +223,6 @@ class COSEBIS:
     def cosebis_from_xipm(
         self,
         theta,
-        dtheta,
         xi_plus,
         xi_minus,
         cache=False,
@@ -241,8 +236,6 @@ class COSEBIS:
         ----------
         theta : array_like
             Theta values in arcmin where xi_plus and xi_minus are provided.
-        dtheta : array_like
-            Bin widths in arcmin for each theta bin.
         xi_plus : array_like
             xi_plus values at the provided theta values.
         xi_minus : array_like
@@ -263,9 +256,9 @@ class COSEBIS:
             xi_minus.
         """
         if (np.min(theta) < self.tmin) | (np.max(theta) > self.tmax):
-            print(
-                "WARNING: The range of theta for xipm is outside the range "
-                "used to compute the roots and normalizations "
+            raise ValueError(
+                "The range of theta for xipm is outside the range used to"
+                " compute the roots and normalizations "
                 f"[{self.tmin, self.tmax}]."
             )
 
@@ -280,11 +273,9 @@ class COSEBIS:
                 self._Tm_log = Tm_log
 
         theta_rad = np.deg2rad(theta / 60)
-        dtheta_rad = np.deg2rad(dtheta / 60)
         if not parallel:
             C_E, C_B = get_xipm_cosebis_serial(
                 theta_rad,
-                dtheta_rad,
                 xi_plus,
                 xi_minus,
                 Tp_log,
@@ -294,7 +285,6 @@ class COSEBIS:
         else:
             C_E, C_B = get_xipm_cosebis_parallel(
                 theta_rad,
-                dtheta_rad,
                 xi_plus,
                 xi_minus,
                 Tp_log,
@@ -380,7 +370,6 @@ class COSEBIS:
     def cosebis_covariance_from_xipm_covariance(
         self,
         theta,
-        dtheta,
         cov_xi_pm,
     ):
         """
@@ -391,8 +380,6 @@ class COSEBIS:
         ----------
         theta : array_like
             Theta values in arcmin where xi_plus and xi_minus are provided.
-        dtheta : array_like
-            Bin widths in arcmin for each theta bin.
         cov_xi_pm : array_like
             Covariance matrix of xi_plus and xi_minus at the provided theta
             values. The shape has to be (2*len(theta), 2*len(theta)) where the
@@ -407,7 +394,7 @@ class COSEBIS:
             and the last Nmax indices to B-modes.
         """
         if (np.min(theta) < self.tmin) | (np.max(theta) > self.tmax):
-            print(
+            raise ValueError(
                 "WARNING: The range of theta for xipm is outside the range "
                 "used to compute the roots and normalizations "
                 f"[{self.tmin, self.tmax}]."
@@ -417,15 +404,14 @@ class COSEBIS:
         Tm_log = self.get_Tm_log(theta)
 
         theta_rad = np.deg2rad(theta / 60)
-        dtheta_rad = np.deg2rad(dtheta / 60)
         Cov_EB = get_cosebis_cov_from_xipm_cov(
-            theta_rad, dtheta_rad, cov_xi_pm, Tp_log, Tm_log, self.Nmax
+            theta_rad, cov_xi_pm, Tp_log, Tm_log, self.Nmax
         )
 
         return Cov_EB
 
 
-def compute_roots_norms(Nmax, tmin, tmax, precision=80, use_nsolve=False):
+def compute_roots_norms(Nmax, tmin, tmax, precision=80):
     """compute roots and norms
 
     Compute the roots, normalization and Tp_log used in the COSEBIs
@@ -444,8 +430,6 @@ def compute_roots_norms(Nmax, tmin, tmax, precision=80, use_nsolve=False):
         Maximum theta in arcmin.
     precision : int, optional
         Precision used in the sympy calculations, by default 80.
-    use_nsolve : bool, optional
-        use `nsolve` (slower) instead of `nroots`, by default False.
 
     Returns
     -------
@@ -553,13 +537,8 @@ def compute_roots_norms(Nmax, tmin, tmax, precision=80, use_nsolve=False):
 
         # Eq. 28
         tt = sym.summation(c[n - 1, i] * z ** (i), (i, 0, n + 1))
-        if use_nsolve:
-            # Precision drop here for some reason..
-            # We then use that as an init for nsolve ()
-            roots_init = sym.solve(tt, z, rational=False)
-            roots = [sym.nsolve(tt, r_tmp) for r_tmp in roots_init]
-        else:
-            roots = sym.nroots(tt, n=precision)
+
+        roots = sym.nroots(tt, n=precision)
 
         r = sym.Array([sym.N(sym.re(roots[j]), 50) for j in range(0, n + 1)])
         # Eq. 36 (without normalization)
