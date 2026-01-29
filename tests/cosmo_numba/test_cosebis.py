@@ -225,14 +225,14 @@ def test_cosebis_from_xipm_and_Cell():
             DATA_DIR,
             "ccl_xi_pm_0.5_250_10_000.npy",
         ),
-        allow_pickle=True,
+        # allow_pickle=True,
     )
     ell, Cell = np.load(
         os.path.join(
             DATA_DIR,
             "ccl_ell_cell_1_100k_100k.npy",
         ),
-        allow_pickle=True,
+        # allow_pickle=True,
     )
 
     cosebis = COSEBIS(theta_min=theta[0], theta_max=theta[-1], N_max=N_mode)
@@ -324,7 +324,7 @@ def test_cosebis_covariance_from_xipm_covariance():
             DATA_DIR,
             "cosmocov_cov_lsst_0.5_250_1000.npy",
         ),
-        allow_pickle=True,
+        # allow_pickle=True,
     )
 
     tmin = 0.5
