@@ -640,7 +640,7 @@ _get_pure_EB_modes_parallel = nb.njit(
 )
 def get_CNPT_EB_modes(
     theta, xip, xim, theta_int, xip_int, xim_int, tmin, tmax
-):
+):  # pragma: no cover
     """get_pure_EB_modes
 
     Computes the CNPT xi E-/B-modes decomposition.
