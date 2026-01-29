@@ -225,14 +225,12 @@ def test_cosebis_from_xipm_and_Cell():
             DATA_DIR,
             "ccl_xi_pm_0.5_250_10_000.npy",
         ),
-        # allow_pickle=True,
     )
     ell, Cell = np.load(
         os.path.join(
             DATA_DIR,
             "ccl_ell_cell_1_100k_100k.npy",
         ),
-        # allow_pickle=True,
     )
 
     cosebis = COSEBIS(theta_min=theta[0], theta_max=theta[-1], N_max=N_mode)
@@ -311,21 +309,27 @@ def test_cosebis_from_xipm_and_Cell():
 def test_cosebis_covariance_from_xipm_covariance():
     """
     Test the COSEBIs covariance computation from xi_pm covariance.
-    NOTE: the tests here are very basic as it is challenging to verify that the
-    computation is correct. One way to do it would be to do it empirically but
-    it would take to much time for a unit test. This has been verify in a
-    separate notebook.
+    We compared the computed covariance to a pre-computed one derived by using
+    500k samples of xi_pm drawn from the original covariance and then computing
+    the COSEBIs covariance from the samples. We check agreement between the two
+    covariances diagonal elements (off-diagonal elements are too noisy for the
+    test) within 0.5% relative tolerance.
     """
-    N_mode = 5
+    N_mode = 20
 
     # Load pre-computed xi_pm covariance from cosmocov (see README for details)
     cov_xipm = np.load(
         os.path.join(
             DATA_DIR,
-            "cosmocov_cov_lsst_0.5_250_1000.npy",
+            "cosmocov_cov_lsst_xipm_0.5_250_1000.npy",
         ),
-        # allow_pickle=True,
     )
+    cov_EB_sampled = np.load(
+        os.path.join(
+            DATA_DIR,
+            "sampled_500k_cov_lsst_cosebis_20.npy",
+        ),
+    )[: 2 * N_mode, : 2 * N_mode]
 
     tmin = 0.5
     tmax = 250.0
@@ -336,6 +340,10 @@ def test_cosebis_covariance_from_xipm_covariance():
     cosebis.compute_roots()
 
     cov_EB = cosebis.cosebis_covariance_from_xipm_covariance(theta, cov_xipm)
+
+    assert_allclose(
+        np.diag(cov_EB), np.diag(cov_EB_sampled), atol=0, rtol=0.005
+    )
 
     assert cov_EB.shape == (2 * N_mode, 2 * N_mode)
 
