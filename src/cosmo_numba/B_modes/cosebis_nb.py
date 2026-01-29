@@ -18,13 +18,7 @@ from ..math.interpolate.interpolate_1D import AkimaInterp1D
 from ..math.utils import extend_log_grid, pad_1D
 
 
-@nb.njit(
-    nb.float64[:](
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64,
-    ),
-)
+@nb.njit
 def tp_log_nb(z, roots, norm):
     """tp_log
 
@@ -58,13 +52,6 @@ def tp_log_nb(z, roots, norm):
 
 
 @nb.njit(
-    nb.float64[:, :](
-        nb.float64[:],
-        nb.types.ListType(
-            nb.types.Array(nb.float64, 1, "C", False, aligned=True)
-        ),
-        nb.float64[:],
-    ),
     parallel=True,
 )
 def tp_n_log(z, roots_n, norms_n):
@@ -92,6 +79,7 @@ def tp_n_log(z, roots_n, norms_n):
     n_z = len(z)
     arr_tp_n_log = np.empty((Nmodes, n_z), dtype=np.float64)
     for n in nb.prange(Nmodes):
+        n = np.int64(n)
         arr_tp_n_log[n, :] = tp_log_nb(z, roots_n[n], norms_n[n])
 
     return arr_tp_n_log
@@ -100,9 +88,7 @@ def tp_n_log(z, roots_n, norms_n):
 # This function does the same thing as the one above but for scalar value of z.
 # It is also written to be easier to call during the integration for the
 # computation of tm_log
-@nb.njit(
-    nb.float64(nb.float64, nb.float64[:]),
-)
+@nb.njit
 def _tp_log_nb(z, data):
     """tp_log
 
@@ -185,13 +171,7 @@ INTEG_TM_LOG_ADDRESS = nb.experimental.function_type._get_wrapper_address(
 )
 
 
-@nb.njit(
-    nb.float64[:](
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64,
-    ),
-)
+@nb.njit
 def tm_log_nb(z, roots, norm):
     """tm_log
 
@@ -236,13 +216,6 @@ def tm_log_nb(z, roots, norm):
 
 
 @nb.njit(
-    nb.float64[:, :](
-        nb.float64[:],
-        nb.types.ListType(
-            nb.types.Array(nb.float64, 1, "C", False, aligned=True)
-        ),
-        nb.float64[:],
-    ),
     parallel=True,
 )
 def tm_n_log(z, roots_n, norms_n):
@@ -270,23 +243,13 @@ def tm_n_log(z, roots_n, norms_n):
     n_z = len(z)
     arr_tm_n_log = np.empty((Nmodes, n_z), dtype=np.float64)
     for n in nb.prange(Nmodes):
+        n = np.int64(n)
         arr_tm_n_log[n, :] = tm_log_nb(z, roots_n[n], norms_n[n])
 
     return arr_tm_n_log
 
 
-# nb.types.ListType(
-#         AkimaInterp1D.class_type.instance_type,
-#     )
 @nb.njit(
-    nb.float64[:, :](
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:, :],
-        nb.float64,
-        nb.float64,
-        nb.float64,
-    ),
     parallel=True,
 )
 def wn_log(
@@ -334,9 +297,6 @@ def wn_log(
     nbins = int(len(theta_rad_ext))
     N_mode = Tp_log.shape[0]
 
-    # Because we are using typed.List, we need to initialize the list with the
-    # final type.
-    # Wn_log = _init_output_wnlog(N_mode)
     Wn_log = np.empty((N_mode, len(ell)), dtype=np.float64)
     for n in nb.prange(N_mode):
         # We apply padding to Tp_log to avoid edge effects in the FFTLog.
@@ -354,21 +314,9 @@ def wn_log(
     return Wn_log
 
 
-sig_get_xipm_cosebis = nb.types.Tuple((nb.float64[:], nb.float64[:]))(
-    nb.float64[:],
-    nb.float64[:],
-    nb.float64[:],
-    nb.float64[:],
-    nb.float64[:, :],
-    nb.float64[:, :],
-    nb.int64,
-)
-
-
-@nb.njit(sig_get_xipm_cosebis)
+@nb.njit
 def get_xipm_cosebis_serial(
     theta_rad,
-    dtheta_rad,
     xip,
     xim,
     Tp_log,
@@ -384,8 +332,6 @@ def get_xipm_cosebis_serial(
     ----------
     theta_rad : numpy.ndarray(float64)
         theta in radian
-    dtheta_rad : numpy.ndarray(float64)
-        bin size for theta in radian
     xip : numpy.ndarray(float64)
         2PCF xi_plus
     xim : numpy.ndarray(float64)
@@ -409,29 +355,18 @@ def get_xipm_cosebis_serial(
         integrand_E = theta_rad * (Tp_log[n] * xip + Tm_log[n] * xim) * 0.5
         integrand_B = theta_rad * (Tp_log[n] * xip - Tm_log[n] * xim) * 0.5
 
-        C_E[n] = np.sum(integrand_E * dtheta_rad)
-        C_B[n] = np.sum(integrand_B * dtheta_rad)
+        C_E[n] = simpson(integrand_E, theta_rad)
+        C_B[n] = simpson(integrand_B, theta_rad)
 
     return C_E, C_B
 
 
 get_xipm_cosebis_parallel = nb.njit(
-    sig_get_xipm_cosebis,
     parallel=True,
 )(get_xipm_cosebis_serial.py_func)
 
 
-sig_get_Cell_cosebis = nb.types.Tuple((nb.float64[:], nb.float64[:]))(
-    nb.float64[:],
-    nb.float64[:],
-    nb.float64[:],
-    # nb.types.ListType(AkimaInterp1D.class_type.instance_type),
-    nb.float64[:, :],
-    nb.int64,
-)
-
-
-@nb.njit(sig_get_Cell_cosebis)
+@nb.njit
 def get_Cell_cosebis_serial(ell, Cell_E, Cell_B, Wn_log, N_mode):
     """get_xipm_cosebis
 
@@ -468,25 +403,15 @@ def get_Cell_cosebis_serial(ell, Cell_E, Cell_B, Wn_log, N_mode):
     return C_E, C_B
 
 
-get_Cell_cosebis_parallel = nb.njit(sig_get_Cell_cosebis, parallel=True)(
-    get_Cell_cosebis_serial.py_func
-)
+get_Cell_cosebis_parallel = nb.njit(
+    parallel=True,
+)(get_Cell_cosebis_serial.py_func)
 
 
 @nb.njit(
-    nb.float64[:, :](
-        nb.float64[:],
-        nb.float64[:],
-        nb.float64[:, :],
-        nb.float64[:, :],
-        nb.float64[:, :],
-        nb.int64,
-    ),
     parallel=True,
 )
-def get_cosebis_cov_from_xipm_cov(
-    theta_rad, dtheta_rad, cov_xipm, Tp_log, Tm_log, N_mode
-):
+def get_cosebis_cov_from_xipm_cov(theta_rad, cov_xipm, Tp_log, Tm_log, N_mode):
     """get_cosebis_cov_from_xipm_cov
 
     Compute the covariace of the COSEBIs from the shear-shear covariance of
@@ -497,8 +422,6 @@ def get_cosebis_cov_from_xipm_cov(
     ----------
     theta_rad : numpy.ndarray(float64)
         theta in radian
-    dtheta_rad : numpy.ndarray(float64)
-        bin size for theta in radian
     cov_xipm : numpy.ndarray(float64)
         shear-shear covariance
     Tp_log : numpy.ndarray(float64)
@@ -532,7 +455,7 @@ def get_cosebis_cov_from_xipm_cov(
                     + Tm_log[m][i] * Tp_log[n] * cov_xipm[n_bins + i, :n_bins]
                     + Tm_log[m][i] * Tm_log[n] * cov_xipm[n_bins + i, n_bins:]
                 )
-                integ_E_tmp[i] = np.sum(integ_E_tmp2 * dtheta_rad)
+                integ_E_tmp[i] = simpson(integ_E_tmp2, theta_rad)
 
                 # B-modes
                 integ_B_tmp2 = theta_rad * (
@@ -541,12 +464,12 @@ def get_cosebis_cov_from_xipm_cov(
                     - Tm_log[m][i] * Tp_log[n] * cov_xipm[n_bins + i, :n_bins]
                     + Tm_log[m][i] * Tm_log[n] * cov_xipm[n_bins + i, n_bins:]
                 )
-                integ_B_tmp[i] = np.sum(integ_B_tmp2 * dtheta_rad)
+                integ_B_tmp[i] = simpson(integ_B_tmp2, theta_rad)
             cov_En[m, n] = (
-                1 / 4.0 * np.sum(integ_E_tmp * theta_rad * dtheta_rad)
+                1 / 4.0 * simpson(integ_E_tmp * theta_rad, theta_rad)
             )
             cov_Bn[m, n] = (
-                1 / 4.0 * np.sum(integ_B_tmp * theta_rad * dtheta_rad)
+                1 / 4.0 * simpson(integ_B_tmp * theta_rad, theta_rad)
             )
             cov_EBn[m, n] = 0.0
 
