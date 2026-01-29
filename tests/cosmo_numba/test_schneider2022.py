@@ -1,0 +1,157 @@
+import os
+from pathlib import Path
+
+import numpy as np
+from numpy.testing import assert_allclose, assert_array_equal
+
+from cosmo_numba.B_modes.schneider2022 import get_pure_EB_modes
+
+DATA_DIR = os.path.join(Path(__file__).parent, "data")
+
+
+def test_pure_eb():
+    """
+    Test the pure E/B-mode decomposition from Schneider et al. (2022).
+    The test make use of pre-computed xi_pm from CCL.
+    """
+    # Load pre-computed xi_pm from CCL
+    theta, xip_model, xim_model = np.load(
+        os.path.join(
+            DATA_DIR,
+            "ccl_xi_pm_0.5_250_20.npy",
+        ),
+    )
+    theta_int, xip_model_int, xim_model_int = np.load(
+        os.path.join(
+            DATA_DIR,
+            "ccl_xi_pm_0.5_800_1_000.npy",
+        ),
+    )
+
+    # Serial computation
+    (
+        xip_E_model,
+        xim_E_model,
+        xip_B_model,
+        xim_B_model,
+        xip_amb_model,
+        xim_amb_model,
+    ) = get_pure_EB_modes(
+        theta,
+        xip_model,
+        xim_model,
+        theta_int,
+        xip_model_int,
+        xim_model_int,
+        np.min(theta),
+        np.max(theta),
+        parallel=False,
+        pad_xim=True,
+        interp_order=5,
+    )
+
+    xip_reconstructed = xip_E_model + xip_B_model + xip_amb_model
+    xim_reconstructed = xim_E_model - xim_B_model + xim_amb_model
+
+    assert xip_reconstructed.size == xip_model.size
+    assert xim_reconstructed.size == xim_model.size
+
+    assert_allclose(
+        xip_reconstructed,
+        xip_model,
+        atol=1e-12,
+        rtol=1e-12,
+    )
+    assert_allclose(
+        xim_reconstructed,
+        xim_model,
+        atol=1e-12,
+        rtol=1e-12,
+    )
+
+    # Parallel computation
+    (
+        xip_E_model,
+        xim_E_model,
+        xip_B_model,
+        xim_B_model,
+        xip_amb_model,
+        xim_amb_model,
+    ) = get_pure_EB_modes(
+        theta,
+        xip_model,
+        xim_model,
+        theta_int,
+        xip_model_int,
+        xim_model_int,
+        np.min(theta),
+        np.max(theta),
+        parallel=True,
+        pad_xim=True,
+        interp_order=5,
+    )
+    xip_reconstructed = xip_E_model + xip_B_model + xip_amb_model
+    xim_reconstructed = xim_E_model - xim_B_model + xim_amb_model
+    assert_allclose(
+        xip_reconstructed,
+        xip_model,
+        atol=1e-12,
+        rtol=1e-12,
+    )
+    assert_allclose(
+        xim_reconstructed,
+        xim_model,
+        atol=1e-12,
+        rtol=1e-12,
+    )
+
+    # Check no padding
+    (
+        xip_E_model_no_pad,
+        xim_E_model_no_pad,
+        xip_B_model_no_pad,
+        xim_B_model_no_pad,
+        xip_amb_model_no_pad,
+        xim_amb_model_no_pad,
+    ) = get_pure_EB_modes(
+        theta,
+        xip_model,
+        xim_model,
+        theta_int,
+        xip_model_int,
+        xim_model_int,
+        np.min(theta),
+        np.max(theta),
+        parallel=True,
+        pad_xim=False,
+        interp_order=5,
+    )
+    xip_reconstructed_no_pad = (
+        xip_E_model_no_pad + xip_B_model_no_pad + xip_amb_model_no_pad
+    )
+    xim_reconstructed_no_pad = (
+        xim_E_model_no_pad - xim_B_model_no_pad + xim_amb_model_no_pad
+    )
+    assert_allclose(
+        xip_reconstructed_no_pad,
+        xip_model,
+        atol=1e-12,
+        rtol=1e-12,
+    )
+    assert_allclose(
+        xim_reconstructed_no_pad,
+        xim_model,
+        atol=1e-12,
+        rtol=1e-12,
+    )
+
+    # Check that padding improve B-mode on xim
+    norm_pad = np.linalg.norm(xim_B_model)
+    norm_no_pad = np.linalg.norm(xim_B_model_no_pad)
+    assert norm_pad < norm_no_pad
+
+    # Check that B-mode on xip are unchanged
+    assert_array_equal(
+        xip_B_model,
+        xip_B_model_no_pad,
+    )
