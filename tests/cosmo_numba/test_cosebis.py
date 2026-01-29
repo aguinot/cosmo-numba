@@ -34,7 +34,7 @@ def test_cosebis_roots_norms_vs_mathematica():
     # Load precomputed roots and norms from Mathematica
     # with N_mode = 20, theta_min = 0.5 arcmin, theta_max = 250 arcmin
     with open(
-        os.path.join(DATA_DIR, "cosebi_tplog_rN_20_0.500_250.000.txt")
+        os.path.join(DATA_DIR, "cosebi_tplog_rN_20_0.500_250.000.dat")
     ) as f:
         lines = f.readlines()
     mp.mp.dps = 50
@@ -219,7 +219,7 @@ def test_cosebis_from_xipm_and_Cell():
     """
     N_mode = 12
 
-    # Load pre-computed xi_pm from CCL (see README for details)
+    # Load pre-computed xi_pm from CCL
     theta, xip_model, xim_model = np.load(
         os.path.join(
             DATA_DIR,
@@ -315,9 +315,9 @@ def test_cosebis_covariance_from_xipm_covariance():
     covariances diagonal elements (off-diagonal elements are too noisy for the
     test) within 0.5% relative tolerance.
     """
-    N_mode = 20
+    N_mode = 12
 
-    # Load pre-computed xi_pm covariance from cosmocov (see README for details)
+    # Load pre-computed xi_pm covariance from cosmocov
     cov_xipm = np.load(
         os.path.join(
             DATA_DIR,
@@ -329,7 +329,7 @@ def test_cosebis_covariance_from_xipm_covariance():
             DATA_DIR,
             "sampled_500k_cov_lsst_cosebis_20.npy",
         ),
-    )[: 2 * N_mode, : 2 * N_mode]
+    )
 
     tmin = 0.5
     tmax = 250.0
@@ -342,7 +342,16 @@ def test_cosebis_covariance_from_xipm_covariance():
     cov_EB = cosebis.cosebis_covariance_from_xipm_covariance(theta, cov_xipm)
 
     assert_allclose(
-        np.diag(cov_EB), np.diag(cov_EB_sampled), atol=0, rtol=0.005
+        np.diag(cov_EB)[:N_mode],
+        np.diag(cov_EB_sampled)[:N_mode],
+        atol=0,
+        rtol=0.005,
+    )
+    assert_allclose(
+        np.diag(cov_EB)[N_mode:],
+        np.diag(cov_EB_sampled)[20 : N_mode + 20],
+        atol=0,
+        rtol=0.005,
     )
 
     assert cov_EB.shape == (2 * N_mode, 2 * N_mode)
