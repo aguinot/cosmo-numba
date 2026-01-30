@@ -7,11 +7,24 @@ Author: Axel Guinot
 
 """
 
+import os
+
 import numba as nb
 import numpy as np
 
 from ..math.integrate.quad import interp_quad
+
 from ..math.utils import extend_log_grid, pad_1D
+
+
+# This allows having coverage
+IN_COVERAGE = False
+if (
+    os.environ.get("TESTING_SCHNEIDER2022", "0") == "1"
+    and os.environ.get("COVERAGE_MODE", "0") == "1"
+):
+    nb.config.DISABLE_JIT = 1
+    IN_COVERAGE = True
 
 
 @nb.njit
@@ -380,23 +393,19 @@ def _get_xip_EB(
         )[0]
 
     m_int = (theta_int >= tmin) & (theta_int <= tmax)
-    if sum(m_int) == 0:
-        S_p_int = 0.0
-        S_m_int = 0.0
-    else:
-        S_p_int, S_m_int = get_S(
-            theta_int[m_int],
-            xip_int[m_int],
-            xim_int[m_int],
-            t,
-            tmin,
-            tmax,
-            theta_bar,
-            B,
-            interp_order=interp_order,
-            epsabs=epsabs,
-            epsrel=epsrel,
-        )
+    S_p_int, S_m_int = get_S(
+        theta_int[m_int],
+        xip_int[m_int],
+        xim_int[m_int],
+        t,
+        tmin,
+        tmax,
+        theta_bar,
+        B,
+        interp_order=interp_order,
+        epsabs=epsabs,
+        epsrel=epsrel,
+    )
 
     return int_tmp, S_p_int, S_m_int
 
@@ -443,23 +452,19 @@ def _get_xim_EB(
         )[0]
 
     m_int = (theta_int >= tmin) & (theta_int <= tmax)
-    if sum(m_int) == 0:
-        V_p_int = 0.0
-        V_m_int = 0.0
-    else:
-        V_p_int, V_m_int = get_V(
-            theta_int[m_int],
-            xip_int[m_int],
-            xim_int[m_int],
-            t,
-            tmin,
-            tmax,
-            theta_bar,
-            B,
-            interp_order=interp_order,
-            epsabs=epsabs,
-            epsrel=epsrel,
-        )
+    V_p_int, V_m_int = get_V(
+        theta_int[m_int],
+        xip_int[m_int],
+        xim_int[m_int],
+        t,
+        tmin,
+        tmax,
+        theta_bar,
+        B,
+        interp_order=interp_order,
+        epsabs=epsabs,
+        epsrel=epsrel,
+    )
     return int_tmp, V_p_int, V_m_int
 
 
@@ -630,9 +635,12 @@ def _get_pure_EB_modes_serial(
     )
 
 
-_get_pure_EB_modes_parallel = nb.njit(
-    parallel=True,
-)(_get_pure_EB_modes_serial.py_func)
+if IN_COVERAGE:  # pragma: no cover
+    _get_pure_EB_modes_parallel = _get_pure_EB_modes_serial
+else:  # pragma: no cover
+    _get_pure_EB_modes_parallel = nb.njit(
+        parallel=True,
+    )(_get_pure_EB_modes_serial.py_func)
 
 
 @nb.njit(

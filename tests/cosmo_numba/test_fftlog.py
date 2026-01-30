@@ -1,3 +1,8 @@
+import os
+
+if os.environ.get("COVERAGE_MODE", "0") == "1":
+    os.environ["TESTING_FFTLOG"] = "1"
+
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -54,7 +59,7 @@ def fr(r, alpha, mu, dim):
 
 
 @pytest.mark.parametrize("mu", [0, 2])
-@pytest.mark.parametrize("alpha", [1.2, 1.5, 1.8])
+@pytest.mark.parametrize("alpha", [1.0, 1.2, 1.5, 1.8])
 def test_fftlog_plaw(mu, alpha):
     r"""
     Test FFTLog-based Hankel transform of a power law against the analytic

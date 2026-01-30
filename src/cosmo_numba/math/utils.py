@@ -1,8 +1,18 @@
+import os
+
 import numpy as np
 import numba as nb
 
+# This allows having coverage
+if (
+    os.environ.get("TESTING_UTILS", "0") == "1"
+    and os.environ.get("COVERAGE_MODE", "0") == "1"
+):
+    nb.config.DISABLE_JIT = 1
+
 
 @nb.njit(
+    nb.complex128(nb.complex128),
     fastmath=True,
 )
 def lngamma(z):
@@ -50,7 +60,16 @@ def lngamma(z):
     return out
 
 
-@nb.njit
+@nb.njit(
+    [
+        nb.float64[:](
+            nb.float64[:],
+        ),
+        nb.int64[:](
+            nb.int64[:],
+        ),
+    ],
+)
 def numbadiff(x):
     """
     Compute the difference between consecutive elements of an array. Numba
@@ -69,7 +88,13 @@ def numbadiff(x):
     return x[1:] - x[:-1]
 
 
-@nb.njit
+@nb.njit(
+    nb.types.Tuple((nb.float64[:], nb.int64, nb.int64))(
+        nb.float64[:],
+        nb.float64,
+        nb.float64,
+    ),
+)
 def extend_log_grid(theta, pad_low_decades=2.0, pad_high_decades=2.0):
     """
     Extend a log-spaced theta grid using its native log spacing.
@@ -115,7 +140,14 @@ def extend_log_grid(theta, pad_low_decades=2.0, pad_high_decades=2.0):
     return theta_ext, n_low, n_low + theta.size
 
 
-@nb.njit
+@nb.njit(
+    nb.float64[:](
+        nb.int64,
+        nb.int64,
+        nb.int64,
+        nb.float64[:],
+    ),
+)
 def pad_1D(N_theta_ext, i_low, i_high, f_theta):
     """
     Extend f(theta) into an extended theta grid.

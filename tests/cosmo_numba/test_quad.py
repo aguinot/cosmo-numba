@@ -1,3 +1,8 @@
+import os
+
+if os.environ.get("COVERAGE_MODE", "0") == "1":
+    os.environ["TESTING_QUAD"] = "1"
+
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -32,6 +37,7 @@ def test_quad_typical():
         k=5,
         periodic=False,
         extrap_dist=1.0,
+        log_interp=False,
         epsabs=int_atol,
         epsrel=int_rtol,
     )
@@ -67,6 +73,8 @@ def test_quad_singular():
         x_end,
         k=3,
         periodic=False,
+        extrap_dist=0.0,
+        log_interp=False,
         epsabs=1.5e-8,
         epsrel=1.5e-8,
     )

@@ -11,10 +11,19 @@ Author: Axel Guinot
 
 """
 
+import os
+
 import numpy as np
 import numba as nb
 
 from ..utils import lngamma
+
+# This allows having coverage
+if (
+    os.environ.get("TESTING_FFTLOG", "0") == "1"
+    and os.environ.get("COVERAGE_MODE", "0") == "1"
+):
+    nb.config.DISABLE_JIT = 1
 
 
 @nb.njit(

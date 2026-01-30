@@ -1,8 +1,12 @@
+import os
+
+if os.environ.get("COVERAGE_MODE", "0") == "1":
+    os.environ["TESTING_INTERP"] = "1"
+
 import numpy as np
-from numpy.testing import assert_allclose
-import ctypes
 
 import pytest
+from numpy.testing import assert_allclose
 
 from cosmo_numba.math.interpolate.interpolate_1D import (
     AkimaInterp1D,
@@ -112,12 +116,9 @@ class InterpolatorWrapper:
         elif self.interp_type == "func":
             # For functional form, we need to call it for each point
             yout = np.zeros_like(xout)
-            # Create a ctypes pointer from the data array
-            data_ptr = self.data.ctypes.data_as(
-                ctypes.POINTER(ctypes.c_double)
-            )
+
             for i, x in enumerate(xout):
-                yout[i] = nb_interp1d_func.ctypes(float(x), data_ptr)
+                yout[i] = nb_interp1d_func(float(x), self.data)
             return yout
 
 
@@ -199,6 +200,11 @@ class TestAkimaInterp1D:
         with pytest.raises(ValueError):
             AkimaInterp1D(x_2, y)
 
+        x = np.linspace(1.0, 0.0, 10, dtype=np.float64)
+        y = np.linspace(0.0, 1.0, 10, dtype=np.float64)
+        with pytest.raises(ValueError):
+            AkimaInterp1D(x, y)
+
 
 class TestNbInterp1D:
     """
@@ -257,6 +263,7 @@ class TestNbInterp1D:
                 h,
                 y,
                 k=k,
+                c=0,
             )
 
             y_eval = interp.eval(x_eval)
@@ -408,6 +415,7 @@ class TestNbInterp1D:
             h,
             y,
             k=k,
+            e=1,
         )
 
         interp_func = InterpolatorWrapper(
@@ -417,6 +425,7 @@ class TestNbInterp1D:
             h,
             y,
             k=k,
+            e=1,
         )
 
         assert_allclose(
@@ -475,3 +484,26 @@ class TestNbInterp1D:
             rtol=5e-4,
             atol=5e-6,
         )
+
+    def test_class_error(self):
+        """
+        Test that nb_interp1d class raises error for invalid inputs.
+        """
+        x = np.linspace(0.0, 6.0, 160)
+        h = x[1] - x[0]
+        y = np.exp(-x)
+
+        xi = np.linspace(0.0, 6.0, 800)
+
+        interp_class = InterpolatorWrapper(
+            "class",
+            x[0],
+            x[-1],
+            h,
+            y,
+            k=11,
+            e=1,
+        )
+
+        with pytest.raises(ValueError):
+            interp_class.eval(xi)

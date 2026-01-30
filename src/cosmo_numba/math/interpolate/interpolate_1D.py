@@ -13,25 +13,22 @@ Author: Axel Guinot
 
 """
 
+import os
+
 import numpy as np
 import numba as nb
 
 from ..utils import numbadiff
 
-spec_akima = [
-    ("x", nb.float64[:]),
-    ("y", nb.float64[:]),
-    ("left", nb.float64),
-    ("right", nb.float64),
-    ("n", nb.int64),
-    ("b", nb.float64[:]),
-    ("c", nb.float64[:]),
-    ("d", nb.float64[:]),
-]
+# This allows having coverage
+if (
+    os.environ.get("TESTING_INTERP", "0") == "1"
+    and os.environ.get("COVERAGE_MODE", "0") == "1"
+):
+    nb.config.DISABLE_JIT = 1
 
 
-@nb.experimental.jitclass(spec_akima)
-class AkimaInterp1D:
+class _AkimaInterp1D:
     """
     Akima's interpolation in 1D.
     This implementation comes from https://github.com/cgohlke/akima ported to
@@ -142,6 +139,22 @@ class AkimaInterp1D:
         ) * wj + self.y[bb]
 
         return yout
+
+
+# We jit the class as it could be useful to have access to the ortiginal python
+# class for non-jitted code.
+spec_akima = [
+    ("x", nb.float64[:]),
+    ("y", nb.float64[:]),
+    ("left", nb.float64),
+    ("right", nb.float64),
+    ("n", nb.int64),
+    ("b", nb.float64[:]),
+    ("c", nb.float64[:]),
+    ("d", nb.float64[:]),
+]
+
+AkimaInterp1D = nb.experimental.jitclass(spec_akima)(_AkimaInterp1D)
 
 
 @nb.njit(
@@ -261,7 +274,7 @@ def _interp1d_k5(f, xout, fout, a, h, n, p, o, lb, ub):
     ),
     fastmath=True,
 )
-def _interp1d_k7(f, xout, fout, a, h, n, p, o, lb, ub):
+def _interp1d_k7(f, xout, fout, a, h, n, p, o, lb, ub):  # pragma: no cover
     m = fout.shape[0]
     for mi in nb.prange(m):
         xr = min(max(xout[mi], lb), ub)
@@ -299,7 +312,7 @@ def _interp1d_k7(f, xout, fout, a, h, n, p, o, lb, ub):
     ),
     fastmath=True,
 )
-def _interp1d_k9(f, xout, fout, a, h, n, p, o, lb, ub):
+def _interp1d_k9(f, xout, fout, a, h, n, p, o, lb, ub):  # pragma: no cover
     m = fout.shape[0]
     for mi in nb.prange(m):
         xr = min(max(xout[mi], lb), ub)
@@ -372,10 +385,10 @@ def _extrapolate1d_x(f, k, o):
         if k == 5:
             f[il] = 6*f[il+1]-15*f[il+2]+20*f[il+3]-15*f[il+4]+6*f[il+5]-f[il+6]  # noqa # fmt: skip
             f[ih] = 6*f[ih-1]-15*f[ih-2]+20*f[ih-3]-15*f[ih-4]+6*f[ih-5]-f[ih-6]  # noqa # fmt: skip
-        if k == 7:
+        if k == 7:  # pragma: no cover
             f[il] = 8*f[il+1]-28*f[il+2]+56*f[il+3]-70*f[il+4]+56*f[il+5]-28*f[il+6]+8*f[il+7]-f[il+8]  # noqa # fmt: skip
             f[ih] = 8*f[ih-1]-28*f[ih-2]+56*f[ih-3]-70*f[ih-4]+56*f[ih-5]-28*f[ih-6]+8*f[ih-7]-f[ih-8]  # noqa # fmt: skip
-        if k == 9:
+        if k == 9:  # pragma: no cover
             f[il] = 10*f[il+1]-45*f[il+2]+120*f[il+3]-210*f[il+4]+252*f[il+5]-210*f[il+6]+120*f[il+7]-45*f[il+8]+10*f[il+9]-f[il+10]  # noqa # fmt: skip
             f[ih] = 10*f[ih-1]-45*f[ih-2]+120*f[ih-3]-210*f[ih-4]+252*f[ih-5]-210*f[ih-6]+120*f[ih-7]-45*f[ih-8]+10*f[ih-9]-f[ih-10]  # noqa # fmt: skip
 
@@ -414,28 +427,7 @@ def _extrapolate1d(f, k, p, c, e):
         return f, 0
 
 
-spec_1d = [
-    ("a", nb.float64),
-    ("b", nb.float64),
-    ("h", nb.float64),
-    ("f", nb.float64[:]),
-    ("k", nb.int64),
-    ("p", nb.boolean),
-    ("c", nb.boolean),
-    ("e", nb.int64),
-    ("log_interp", nb.boolean),
-    ("n", nb.int64),
-    ("_f", nb.float64[:]),
-    ("_o", nb.int64),
-    ("lb", nb.float64),
-    ("ub", nb.float64),
-    ("xout", nb.float64[:]),
-    ("out", nb.float64[:]),
-]
-
-
-@nb.experimental.jitclass(spec_1d)
-class nb_interp1d:
+class _nb_interp1d:
     """
     1D Interpolator using local Taylor expansions
     This implementation comes from https://github.com/dbstein/fast_interp
@@ -520,9 +512,9 @@ class nb_interp1d:
             self._interp1d_k3()
         elif self.k == 5:
             self._interp1d_k5()
-        elif self.k == 7:
+        elif self.k == 7:  # pragma: no cover
             self._interp1d_k7()
-        elif self.k == 9:
+        elif self.k == 9:  # pragma: no cover
             self._interp1d_k9()
         else:
             raise ValueError(f"No interpolation for k={self.k}")
@@ -571,7 +563,7 @@ class nb_interp1d:
             self.ub,
         )
 
-    def _interp1d_k7(self):
+    def _interp1d_k7(self):  # pragma: no cover
         _interp1d_k7(
             self._f,
             self.xout,
@@ -585,7 +577,7 @@ class nb_interp1d:
             self.ub,
         )
 
-    def _interp1d_k9(self):
+    def _interp1d_k9(self):  # pragma: no cover
         _interp1d_k9(
             self._f,
             self.xout,
@@ -600,6 +592,31 @@ class nb_interp1d:
         )
 
 
+# We jit the class as it could be useful to have access to the ortiginal python
+# class for non-jitted code.
+spec_1d = [
+    ("a", nb.float64),
+    ("b", nb.float64),
+    ("h", nb.float64),
+    ("f", nb.float64[:]),
+    ("k", nb.int64),
+    ("p", nb.boolean),
+    ("c", nb.boolean),
+    ("e", nb.int64),
+    ("log_interp", nb.boolean),
+    ("n", nb.int64),
+    ("_f", nb.float64[:]),
+    ("_o", nb.int64),
+    ("lb", nb.float64),
+    ("ub", nb.float64),
+    ("xout", nb.float64[:]),
+    ("out", nb.float64[:]),
+]
+
+
+nb_interp1d = nb.experimental.jitclass(spec_1d)(_nb_interp1d)
+
+
 #########
 #########
 # This functionnal form of nb_interp1d is meant to be use for integration
@@ -610,10 +627,7 @@ spec_interp = nb.float64(
 )
 
 
-@nb.cfunc(
-    spec_interp,
-)
-@nb.njit(spec_interp, fastmath=True, cache=True)
+@nb.njit
 def nb_interp1d_func(
     xout,
     data,
@@ -681,9 +695,13 @@ def nb_interp1d_func(
         _interp1d_k3(_f, xout, out, a, h, n, p, _o, lb, ub)
     elif k == 5:
         _interp1d_k5(_f, xout, out, a, h, n, p, _o, lb, ub)
-    elif k == 7:
+    elif k == 7:  # pragma: no cover
         _interp1d_k7(_f, xout, out, a, h, n, p, _o, lb, ub)
-    elif k == 9:
+    elif k == 9:  # pragma: no cover
         _interp1d_k9(_f, xout, out, a, h, n, p, _o, lb, ub)
 
     return out[0]
+
+
+if not nb.config.DISABLE_JIT:  # pragma: no cover
+    nb_interp1d_cfunc = nb.cfunc(spec_interp)(nb_interp1d_func)

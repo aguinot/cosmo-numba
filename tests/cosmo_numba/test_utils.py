@@ -1,3 +1,8 @@
+import os
+
+if os.environ.get("COVERAGE_MODE", "0") == "1":
+    os.environ["TESTING_UTILS"] = "1"
+
 import numpy as np
 from numpy.testing import assert_allclose
 
