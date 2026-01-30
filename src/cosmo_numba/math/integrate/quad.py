@@ -9,25 +9,40 @@ Author: Axel Guinot
 
 """
 
+import os
+
+from itertools import product
+
 import numba as nb
 import numpy as np
 from NumbaQuadpack import dqags
 
-from itertools import product
-
 from ..interpolate.interpolate_1D import (
-    nb_interp1d_func,
+    nb_interp1d_cfunc,
+    spec_interp,
+)
+
+# This allows having coverage
+IN_COVERAGE = False
+if (os.environ.get("TESTING_QUAD", "0") == "1") and os.environ.get(
+    "COVERAGE_MODE", "0"
+) == "1":
+    IN_COVERAGE = True
+
+
+INTERP_ADDRESS = nb.experimental.function_type._get_wrapper_address(
+    nb_interp1d_cfunc,
     spec_interp,
 )
 
 
-def make_signature(output_sig, *args):
+def make_signature(output_sigs, *args):
     """
     Create function signatures for Numba JIT compilation.
 
     Parameters
     ----------
-    output_sig : str
+    output_sigs : list of str
         Signature of the output type.
     *args : list of list of str
         Each list contains possible types for each argument.
@@ -39,17 +54,13 @@ def make_signature(output_sig, *args):
     """
     output_comb = list(product(*args, repeat=1))
     sig_final = []
-    for output in output_comb:
-        sig_tmp = ", ".join(output)
-        sig_tmp = f"({sig_tmp})"
-        sig_tmp = output_sig + sig_tmp
-        sig_final.append(sig_tmp)
+    for output_sig in output_sigs:
+        for output in output_comb:
+            sig_tmp = ", ".join(output)
+            sig_tmp = f"({sig_tmp})"
+            sig_tmp = output_sig + sig_tmp
+            sig_final.append(sig_tmp)
     return sig_final
-
-
-INTERP_ADDRESS = nb.experimental.function_type._get_wrapper_address(
-    nb_interp1d_func, spec_interp
-)
 
 
 # Here we use a constructor for the signature due to the high number of
@@ -57,11 +68,11 @@ INTERP_ADDRESS = nb.experimental.function_type._get_wrapper_address(
 # To see the full signature of the function, one can call
 # `interp_quad.signature` from python.
 spec_interp_quad = make_signature(
-    "Tuple((float64, float64, boolean))",
+    ["Tuple((float64, float64, boolean))"],
     ["float64"],
     ["float64"],
     ["float64"],
-    ["float64[:]"],
+    ["float64[::1]"],
     ["float64"],
     ["float64"],
     ["int64", "Omitted(3)"],
@@ -74,9 +85,7 @@ spec_interp_quad = make_signature(
 )
 
 
-@nb.njit(
-    # spec_interp_quad,
-)
+@nb.njit(spec_interp_quad)
 def interp_quad(
     x_start,
     x_end,
@@ -141,7 +150,7 @@ def interp_quad(
 
     len_fx = len(fx)
 
-    data = np.empty(len_fx + 8, dtype=np.float64)
+    data = np.empty(len_fx + 9, dtype=np.float64)
     data[0] = np.float64(len_fx)
     for i in range(len_fx):
         data[i + 1] = fx[i]

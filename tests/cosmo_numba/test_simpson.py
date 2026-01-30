@@ -1,3 +1,8 @@
+import os
+
+if os.environ.get("COVERAGE_MODE", "0") == "1":
+    os.environ["TESTING_SIMPSON"] = "1"
+
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
@@ -6,7 +11,7 @@ from cosmo_numba.math.integrate.simpson import simpson
 
 def test_simpson():
     """
-    Simplied version of the Scipy testing suite.
+    Simplified version of the Scipy testing suite.
     """
 
     y = np.arange(17)

@@ -6,16 +6,23 @@ Author: Axel Guinot
 
 """
 
+import os
+
 import numpy as np
 import numba as nb
 
 from ..utils import numbadiff
 
+# This allows having coverage
+if (
+    os.environ.get("TESTING_SIMPSON", "0") == "1"
+    or os.environ.get("TESTING_COSEBIS", "0") == "1"
+) and os.environ.get("COVERAGE_MODE", "0") == "1":
+    nb.config.DISABLE_JIT = 1
+
 
 @nb.njit
 def _basic_simpson(y, start, stop, x, dx):
-    if start is None:
-        start = 0
     step = 2
 
     if x is None:  # Even-spaced Simpson's rule.
@@ -96,7 +103,7 @@ def simpson(y, x=None, dx=1.0):
         if x is not None:
             # grab the last two spacings from the appropriate axis
             diffs = numbadiff(x)
-            h = np.array([diffs[-2], diffs[-1]])
+            h = np.array([diffs[-2], diffs[-1]], dtype=np.float64)
 
         # This is the correction for the last interval according to
         # Cartwright.

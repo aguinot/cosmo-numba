@@ -2,14 +2,17 @@ import re
 import os
 from pathlib import Path
 
+if os.environ.get("COVERAGE_MODE", "0") == "1":
+    os.environ["TESTING_COSEBIS"] = "1"
+
 import numpy as np
 import mpmath as mp
+from scipy.integrate import simpson
 
 from numpy.testing import assert_allclose
 import pytest
 
 from cosmo_numba.B_modes.cosebis import COSEBIS
-from cosmo_numba.math.integrate.simpson import simpson
 from cosmo_numba.math.integrate.quad import interp_quad
 from cosmo_numba.math.integrate.fftlog import fht
 from cosmo_numba.math.utils import extend_log_grid, pad_1D
@@ -93,8 +96,9 @@ def test_cosebis_Tp_log_Tm_log():
             Tp_log[n] * theta,
             theta[0],
             theta[-1],
-            log_interp=True,
             k=5,
+            periodic=False,
+            log_interp=True,
         )
 
         assert success
@@ -107,8 +111,9 @@ def test_cosebis_Tp_log_Tm_log():
             Tm_log[n] / theta,
             theta[0],
             theta[-1],
-            log_interp=True,
             k=5,
+            periodic=False,
+            log_interp=True,
         )
 
         assert success

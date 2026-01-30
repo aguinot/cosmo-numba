@@ -1,4 +1,8 @@
 import os
+
+if os.environ.get("COVERAGE_MODE", "0") == "1":
+    os.environ["TESTING_SCHNEIDER2022"] = "1"
+
 from pathlib import Path
 
 import numpy as np

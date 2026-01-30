@@ -95,4 +95,5 @@ ignore = [
 omit=[
     "src/cosmo_numba/_version.py",
     "src/cosmo_numba/math/interpolate/interpolate_2D.py",
+    "src/cosmo_numba/B_modes/cosebis_nb_cfunc.py",  # Contains numba cfuncs which are hard to cover in tests
 ]
