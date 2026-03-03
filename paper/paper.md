@@ -16,7 +16,7 @@ authors:
 affiliations:
  - name: Department of Physics, McWilliams Center for Cosmology and Astrophysics, Carnegie Mellon University, Pittsburgh, PA 15213, USA
    index: 1
-date: 26 November 2025
+date: 3 March 2026
 bibliography: paper.bib
 
 # # Optional fields if submitting to a AAS journal too, see this blog post:
