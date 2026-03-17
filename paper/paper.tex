@@ -1,0 +1,511 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+% definitions for citeproc citations
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ % allow citations to break across lines
+ \let\@cite@ofmt\@firstofone
+ % avoid brackets around text for \cite:
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
+  \fi
+  % set entry spacing
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{\hfill\break\parbox[t]{\linewidth}{\strut\ignorespaces#1\strut}}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+\ifLuaTeX
+\usepackage[bidi=basic]{babel}
+\else
+\usepackage[bidi=default]{babel}
+\fi
+\babelprovide[main,import]{american}
+% get rid of language-specific shorthands (see #6817):
+\let\LanguageShortHands\languageshorthands
+\def\languageshorthands#1{}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  pdftitle={cosmo-numba: B-modes and COSEBIs computations accelerated by
+Numba},
+  pdfauthor={Axel Guinot, Rachel Mandelbaum},
+  pdflang={en-US},
+  colorlinks=true,
+  linkcolor={Maroon},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+\title{cosmo-numba: B-modes and COSEBIs computations accelerated by
+Numba}
+
+\definecolor{c53baa1}{RGB}{83,186,161}
+\definecolor{c202826}{RGB}{32,40,38}
+\def \rorglobalscale {0.1}
+\newcommand{\rorlogo}{%
+\begin{tikzpicture}[y=1cm, x=1cm, yscale=\rorglobalscale,xscale=\rorglobalscale, every node/.append style={scale=\rorglobalscale}, inner sep=0pt, outer sep=0pt]
+  \begin{scope}[even odd rule,line join=round,miter limit=2.0,shift={(-0.025, 0.0216)}]
+    \path[fill=c53baa1,nonzero rule,line join=round,miter limit=2.0] (1.8164, 3.012) -- (1.4954, 2.5204) -- (1.1742, 3.012) -- (1.8164, 3.012) -- cycle;
+    \path[fill=c53baa1,nonzero rule,line join=round,miter limit=2.0] (3.1594, 3.012) -- (2.8385, 2.5204) -- (2.5172, 3.012) -- (3.1594, 3.012) -- cycle;
+    \path[fill=c53baa1,nonzero rule,line join=round,miter limit=2.0] (1.1742, 0.0669) -- (1.4954, 0.5588) -- (1.8164, 0.0669) -- (1.1742, 0.0669) -- cycle;
+    \path[fill=c53baa1,nonzero rule,line join=round,miter limit=2.0] (2.5172, 0.0669) -- (2.8385, 0.5588) -- (3.1594, 0.0669) -- (2.5172, 0.0669) -- cycle;
+    \path[fill=c202826,nonzero rule,line join=round,miter limit=2.0] (3.8505, 1.4364).. controls (3.9643, 1.4576) and (4.0508, 1.5081) .. (4.1098, 1.5878).. controls (4.169, 1.6674) and (4.1984, 1.7642) .. (4.1984, 1.8777).. controls (4.1984, 1.9719) and (4.182, 2.0503) .. (4.1495, 2.1132).. controls (4.1169, 2.1762) and (4.0727, 2.2262) .. (4.0174, 2.2635).. controls (3.9621, 2.3006) and (3.8976, 2.3273) .. (3.824, 2.3432).. controls (3.7505, 2.359) and (3.6727, 2.367) .. (3.5909, 2.367) -- (2.9676, 2.367) -- (2.9676, 1.8688).. controls (2.9625, 1.8833) and (2.9572, 1.8976) .. (2.9514, 1.9119).. controls (2.9083, 2.0164) and (2.848, 2.1056) .. (2.7705, 2.1791).. controls (2.6929, 2.2527) and (2.6014, 2.3093) .. (2.495, 2.3487).. controls (2.3889, 2.3881) and (2.2728, 2.408) .. (2.1468, 2.408).. controls (2.0209, 2.408) and (1.905, 2.3881) .. (1.7986, 2.3487).. controls (1.6925, 2.3093) and (1.6007, 2.2527) .. (1.5232, 2.1791).. controls (1.4539, 2.1132) and (1.3983, 2.0346) .. (1.3565, 1.9436).. controls (1.3504, 2.009) and (1.3351, 2.0656) .. (1.3105, 2.1132).. controls (1.2779, 2.1762) and (1.2338, 2.2262) .. (1.1785, 2.2635).. controls (1.1232, 2.3006) and (1.0586, 2.3273) .. (0.985, 2.3432).. controls (0.9115, 2.359) and (0.8337, 2.367) .. (0.7519, 2.367) -- (0.1289, 2.367) -- (0.1289, 0.7562) -- (0.4837, 0.7562) -- (0.4837, 1.4002) -- (0.6588, 1.4002) -- (0.9956, 0.7562) -- (1.4211, 0.7562) -- (1.0118, 1.4364).. controls (1.1255, 1.4576) and (1.2121, 1.5081) .. (1.2711, 1.5878).. controls (1.2737, 1.5915) and (1.2761, 1.5954) .. (1.2787, 1.5991).. controls (1.2782, 1.5867) and (1.2779, 1.5743) .. (1.2779, 1.5616).. controls (1.2779, 1.4327) and (1.2996, 1.3158) .. (1.3428, 1.2113).. controls (1.3859, 1.1068) and (1.4462, 1.0176) .. (1.5237, 0.944).. controls (1.601, 0.8705) and (1.6928, 0.8139) .. (1.7992, 0.7744).. controls (1.9053, 0.735) and (2.0214, 0.7152) .. (2.1474, 0.7152).. controls (2.2733, 0.7152) and (2.3892, 0.735) .. (2.4956, 0.7744).. controls (2.6016, 0.8139) and (2.6935, 0.8705) .. (2.771, 0.944).. controls (2.8482, 1.0176) and (2.9086, 1.1068) .. (2.952, 1.2113).. controls (2.9578, 1.2253) and (2.9631, 1.2398) .. (2.9681, 1.2544) -- (2.9681, 0.7562) -- (3.3229, 0.7562) -- (3.3229, 1.4002) -- (3.4981, 1.4002) -- (3.8349, 0.7562) -- (4.2603, 0.7562) -- (3.8505, 1.4364) -- cycle(0.9628, 1.7777).. controls (0.9438, 1.7534) and (0.92, 1.7357) .. (0.8911, 1.7243).. controls (0.8623, 1.7129) and (0.83, 1.706) .. (0.7945, 1.7039).. controls (0.7588, 1.7015) and (0.7252, 1.7005) .. (0.6932, 1.7005) -- (0.4839, 1.7005) -- (0.4839, 2.0667) -- (0.716, 2.0667).. controls (0.7477, 2.0667) and (0.7805, 2.0643) .. (0.8139, 2.0598).. controls (0.8472, 2.0553) and (0.8768, 2.0466) .. (0.9025, 2.0336).. controls (0.9282, 2.0206) and (0.9496, 2.0021) .. (0.9663, 1.9778).. controls (0.9829, 1.9534) and (0.9914, 1.9209) .. (0.9914, 1.8799).. controls (0.9914, 1.8362) and (0.9819, 1.8021) .. (0.9628, 1.7777) -- cycle(2.6125, 1.3533).. controls (2.5889, 1.2904) and (2.5553, 1.2359) .. (2.5112, 1.1896).. controls (2.4672, 1.1433) and (2.4146, 1.1073) .. (2.3529, 1.0814).. controls (2.2916, 1.0554) and (2.2228, 1.0427) .. (2.1471, 1.0427).. controls (2.0712, 1.0427) and (2.0026, 1.0557) .. (1.9412, 1.0814).. controls (1.8799, 1.107) and (1.8272, 1.1433) .. (1.783, 1.1896).. controls (1.7391, 1.2359) and (1.7052, 1.2904) .. (1.6817, 1.3533).. controls (1.6581, 1.4163) and (1.6465, 1.4856) .. (1.6465, 1.5616).. controls (1.6465, 1.6359) and (1.6581, 1.705) .. (1.6817, 1.7687).. controls (1.7052, 1.8325) and (1.7388, 1.8873) .. (1.783, 1.9336).. controls (1.8269, 1.9799) and (1.8796, 2.0159) .. (1.9412, 2.0418).. controls (2.0026, 2.0675) and (2.0712, 2.0804) .. (2.1471, 2.0804).. controls (2.223, 2.0804) and (2.2916, 2.0675) .. (2.3529, 2.0418).. controls (2.4143, 2.0161) and (2.467, 1.9799) .. (2.5112, 1.9336).. controls (2.5551, 1.8873) and (2.5889, 1.8322) .. (2.6125, 1.7687).. controls (2.636, 1.705) and (2.6477, 1.6359) .. (2.6477, 1.5616).. controls (2.6477, 1.4856) and (2.636, 1.4163) .. (2.6125, 1.3533) -- cycle(3.8015, 1.7777).. controls (3.7825, 1.7534) and (3.7587, 1.7357) .. (3.7298, 1.7243).. controls (3.701, 1.7129) and (3.6687, 1.706) .. (3.6333, 1.7039).. controls (3.5975, 1.7015) and (3.5639, 1.7005) .. (3.5319, 1.7005) -- (3.3226, 1.7005) -- (3.3226, 2.0667) -- (3.5547, 2.0667).. controls (3.5864, 2.0667) and (3.6192, 2.0643) .. (3.6526, 2.0598).. controls (3.6859, 2.0553) and (3.7155, 2.0466) .. (3.7412, 2.0336).. controls (3.7669, 2.0206) and (3.7883, 2.0021) .. (3.805, 1.9778).. controls (3.8216, 1.9534) and (3.8301, 1.9209) .. (3.8301, 1.8799).. controls (3.8301, 1.8362) and (3.8206, 1.8021) .. (3.8015, 1.7777) -- cycle;
+  \end{scope}
+\end{tikzpicture}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Authors and Affiliations
+
+\usepackage[affil-it]{authblk}
+\usepackage{orcidlink}
+%% \renewcommand\Authsep{, }
+\setlength{\affilsep}{1em}
+\author[1%
+  %
+  ]{Axel Guinot%
+    \,\orcidlink{0000-0002-5068-7918}\,%
+    }
+\author[1%
+  %
+  ]{Rachel Mandelbaum%
+    \,\orcidlink{0000-0003-2271-1527}\,%
+    }
+
+\affil[1]{Department of Physics, McWilliams Center for Cosmology and
+Astrophysics, Carnegie Mellon University, Pittsburgh, PA 15213, USA%
+  }
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\date{6 March 2026}
+
+\begin{document}
+\maketitle
+
+\section{Summary}\label{summary}
+
+Weak gravitational lensing is a widely used probe in cosmological
+analysis. It allows astrophysists to understand the content and
+evolution of the Universe. We are entering an era where we are not
+limited by the data volume but by systematic uncertainties. It is in
+this context that we present here a simple python-based software package
+to help in the computation of E-/B-mode decomposition, which can be use
+for systematic checks or science analysis. As we demonstrate, our
+implementation has both the high precision and speed required to perform
+this kind of analysis while avoiding a scenario wherein either numerical
+precision or computational time is a significant limiting factor.
+
+\section{Statement of need}\label{statement-of-need}
+
+The E-/B-mode composition for cosmic shear poses a significant
+computational challenge given the need for high precision (required to
+integrate oscillatory functions over a large integration range and
+achieve accurate results) and speed. \texttt{Cosmo-numba} meets this
+need, facilitating the computation of E-/B-mode decomposition using two
+methods. One of them is the Complete Orthogonal Sets of E-/B-mode
+Integrals (COSEBIs) as presented in P. Schneider et al.
+(\citeproc{ref-Schneider_2010}{2010}). The COSEBIs rely on very high
+precision computation requiring more than 80 decimal places. P.
+Schneider et al. (\citeproc{ref-Schneider_2010}{2010}) propose an
+implementation using \texttt{mathematica}. \texttt{cosmo-numba} uses a
+combination of \texttt{sympy} and \texttt{mpmath} to reach the required
+precision. This python version enables an easier integration within
+cosmological inference pipelines, which are commonly python-based, and
+facilitates the null tests.
+
+This software package also enables the computation of the pure-mode
+correlation functions presented in Peter Schneider et al.
+(\citeproc{ref-Schneider_2022}{2022}). Those integrals are less
+numerically challenging than the COSEBIs, but having a fast computation
+is necessary for their integration in an inference pipeline. Indeed, one
+can use those correlation functions for cosmological inference, in which
+case the large number of calls to the likelihood function will require a
+fast implementation.
+
+\section{State of the field}\label{state-of-the-field}
+
+There are other implementations of the COSEBIs such as
+CosmoPipe\footnote{\url{https://github.com/AngusWright/CosmoPipe}} used
+in the KiDS-legacy analysis (\citeproc{ref-kids_legacy}{Wright et al.,
+2025}). Our implemetation is characterized by the use of \texttt{numba}
+that makes the computation of the filter functions described in
+\autoref{sec:cosebis} faster. Regarding the pure E-/B-mode
+decomposition, we have not found a similar publicly available
+implementation. That being said, they are classicaly used as a one-time
+measure for null tests in various surveys. The implementation we are
+presenting would enable one to use this decomposition for cosmological
+inference, which requires computing several integrals at each likelyhood
+call. While the commonly used \texttt{scipy} library would make the
+computation untractable, the speed gain by switching to \texttt{numba}
+opens new opportunities such as this one.
+
+\section{Software design}\label{software-design}
+
+This package has been designed around two constraints: precision and
+speed. As it can be difficult to reach both at the same time, the code
+is partitioned in a way that parts requiring high precision are done
+using python libraries such as \texttt{sympy} and \texttt{mpmath}. In
+contrast, parts of the code that do not require high precision leverage
+the power of Just-In-Time (JIT) compilation. \texttt{Numba} provides
+significant speed up compared to a classic python implementation. As
+this library is intended to provide tools for cosmological computation,
+it was important to provide meaningful unit tests and demonstrate a full
+coverage of the library. Providing an accurate coverage is challenging
+when using \texttt{numba} compiled code. Our implementation allows the
+developer to disable compilation for the targeted part of the code when
+performing coverage tests. This allows us to provide both high quality
+unit tests and good coverage to the users.
+
+\section{Testing setup}\label{testing-setup}
+
+In the following two sections we make use of fiducial shear-shear
+correlation functions, \(\xi_{\pm}(\theta)\), and power spectra,
+\(P_{E/B}(\ell)\). They have been computed using the Core Cosmology
+Library\footnote{\url{https://github.com/LSSTDESC/CCL}}
+(\citeproc{ref-Chisari_2019}{Chisari et al., 2019}). The cosmological
+parameters are taken from Aghanim et al.
+(\citeproc{ref-Planck_2018}{2020}). For tests that involved covariances
+we are using the Stage-IV Legacy Survey of Space and Time (LSST) Year 10
+as a reference. The characteristics are taken from the LSST Dark Energy
+Science Collaboration (DESC) Science Requirements Document (SRD)
+(\citeproc{ref-LSST_SRD}{The LSST Dark Energy Science Collaboration et
+al., 2021}).
+
+\section{COSEBIs}\label{cosebis}
+
+\label{sec:cosebis}
+
+The COSEBIs are defined as:
+
+\begin{equation}
+E_{n} = \frac{1}{2} \int_{0}^{\infty} d\theta\, \theta [T_{n,+}(\theta)\xi_{+}(\theta) + T_{n,-}(\theta)\xi_{-}(\theta)],
+\end{equation} \begin{equation}
+B_{n} = \frac{1}{2} \int_{0}^{\infty} d\theta\, \theta [T_{n,+}(\theta)\xi_{+}(\theta) - T_{n,-}(\theta)\xi_{-}(\theta)];
+\end{equation}
+
+where \(\xi_{\pm}(\theta)\) are the shear correlation functions, and
+\(T_{n,\pm}\) are the weight functions for the COSEBI mode \(n\). The
+complexity is in the computation of the weight functions.
+\texttt{Cosmo-numba} carries out the computation of the weight functions
+in a logarithmic scale defined by:
+
+\begin{equation}
+T_{n,+}^{\rm{log}}(\theta) = t_{n,+}^{\rm{log}}(z) = N_{n}\sum_{j=0}^{n+1}\bar{c}_{nj}z^{j};
+\end{equation}
+
+whare \(z = \rm{log}(\theta/\theta_{\rm{min}})\), \(N_{n}\) is the
+normalization for the mode \(n\), and \(\bar{c}_{jn}\) are defined
+iteratively from Bessel functions (we refer the readers to P. Schneider
+et al. (\citeproc{ref-Schneider_2010}{2010}) for more details).
+
+We have validating our implementation against the original version in
+\texttt{Mathematica} from P. Schneider et al.
+(\citeproc{ref-Schneider_2010}{2010}). In \autoref{fig:Tpm_prec} we show
+the impact of the precision going from 15 decimal places, which
+corresponds to the precision one could achieve using float64, up to 80
+decimal places, the precision used in the original \texttt{Mathematica}
+implementation. We can see that classic float64 precision would not be
+sufficient, and with a precision of 80 our code exactly recovers the
+results from the original implementation. Given that the precision comes
+at very little computational cost, we default to the original
+implementation using high precision. The impact of the precision
+propagated to the COSEBIs is shown in \autoref{fig:EB_prec}. We can see
+that using a lower precision than the default setting can incur a
+several percent error.
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio]{cosebis_prec_Tpm.png}}
+\caption{In this figure we show the impact of the precision in the
+computation of the weight functions \(T_{\pm}^{\rm{log}}\). For
+comparion, a precision of 15 corresponds to what would be achieved using
+\texttt{numpy} float64. The difference is computed with respect to the
+original \texttt{Mathematica} implementation presented in P. Schneider
+et al. (\citeproc{ref-Schneider_2010}{2010}). The figure uses symlog,
+with the shaded region representing the linear scale in the range
+\([-10^{-15}, 10^{-15}]\).\label{fig:Tpm_prec}}
+\end{figure}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio]{cosebis_prec_EB.png}}
+\caption{This figure shows the difference in the COSEBIs E- and B-modes
+relative to the original \texttt{Mathematica} implementation. We see
+that using only 15 decimal places would lead to several percent error,
+making an implementation based on \texttt{numpy} float64 not suitable.
+The figure uses symlog, with the shaded region representing the linear
+scale in the range \([-1,1]\) percent.\label{fig:EB_prec}}
+\end{figure}
+
+COSEBIs can also be defined from the power spectrum as:
+
+\begin{equation}
+E_{n} = \int_{0}^{\infty} \frac{d \ell \, \ell}{2 \pi} P_{E}(\ell)W_{n}(\ell);
+\end{equation} \begin{equation}
+B_{n} = \int_{0}^{\infty} \frac{d \ell \, \ell}{2 \pi} P_{B}(\ell)W_{n}(\ell);
+\end{equation}
+
+where \(P_{E/B}(\ell)\) is the power spectrum of E- and B-modes and
+\(W_{n}(\ell)\) are the filter functions which can be computed from
+\(T_{n,+}\) as:
+
+\begin{equation}\label{eq:Wn}
+W_{n}(\ell) = \int_{\theta_{\rm{min}}}^{\theta_{\rm{max}}} d\theta \,\theta T_{n,+}(\theta) J_{0}(\ell\theta);
+\end{equation}
+
+with \(J_{0}(\ell \theta)\) the 0-th order Bessel function. The
+\autoref{eq:Wn} is a Hankel transform of order 0. It can be computed
+using the \texttt{FFTLog} algorithm presented in Hamilton
+(\citeproc{ref-Hamilton_2000}{2000}) implemented here in \texttt{Numba}.
+\autoref{fig:cosebis_xi_cl} shows the comparison between the COSEBIs
+computed from \(\xi_{\pm}(\theta)\) and from \(C_{E/B}(\ell)\). We can
+see that the COSEBI E- \& B-modes agree very well, with at most
+\(0.3\sigma\) difference with respect to the LSST Y10 covariance. We
+consider that using either approach would not impact the scientific
+interpretation and both could be used for consistency checks.
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio]{cosebis_EB_xi_Cl.png}}
+\caption{Comparison of the COSEBIs E- and B-mode computed from
+\(\xi_{\pm}(\theta)\) and \(C_{E/B}(\ell)\). The \emph{upper} panel
+shows the COSEBIs E-/B-modes while the \emph{bottom} panel shows the
+difference with respect to the statistical uncertainty based on the LSST
+Y10 covariance.\label{fig:cosebis_xi_cl}}
+\end{figure}
+
+Finally, we have compared our implementation agains CosmoPipe\footnote{The
+  test has been done on a Mac M3 Max using 16 cores. The script to run
+  the test is available at:
+  \url{https://github.com/aguinot/cosmo-numba/blob/main/notebooks/cosebis_comparison_with_cosmopipe.ipynb}}
+which make use of a different integration method to compute the filter
+functions such as Levin integration. We found that our implementation
+using numba is around 100 times faster for equivalent precision.
+
+\section{Pure-Mode Correlation
+Functions}\label{pure-mode-correlation-functions}
+
+In this section we describe the computation of the pure-mode correlation
+functions as defined in Peter Schneider et al.
+(\citeproc{ref-Schneider_2022}{2022}). These are defined as follows:
+
+\begin{equation}
+\xi_{+}^{E}(\vartheta) = \frac{1}{2} \left[ \xi_{+}(\vartheta) + \xi_{-}(\vartheta) + \int_{\vartheta}^{\vartheta_{\rm{max}}} \frac{d \theta}{\theta} \xi_{-}(\theta) \left( 4 - \frac{12\vartheta^{2}}{\theta^{2}} \right) \right] - \frac{1}{2} \left[ S_{+}(\vartheta) + S_{-}(\vartheta)\right],
+\end{equation} \begin{equation}
+\xi_{+}^{B}(\vartheta) = \frac{1}{2} \left[ \xi_{+}(\vartheta) - \xi_{-}(\vartheta) - \int_{\vartheta}^{\vartheta_{\rm{max}}} \frac{d \theta}{\theta} \xi_{-}(\theta) \left( 4 - \frac{12\vartheta^{2}}{\theta^{2}} \right) \right] - \frac{1}{2} \left[ S_{+}(\vartheta) - S_{-}(\vartheta)\right],
+\end{equation}
+
+\begin{equation}
+\xi_{-}^{E}(\vartheta) = \frac{1}{2} \left[ \xi_{+}(\vartheta) + \xi_{-}(\vartheta) + \int_{\vartheta_{\rm{min}}}^{\vartheta} \frac{d \theta\~\theta}{\vartheta^{2}} \xi_{+}(\theta) \left( 4 - \frac{12\theta^{2}}{\vartheta^{2}} \right) \right] - \frac{1}{2} \left[ V_{+}(\vartheta) + V_{-}(\vartheta)\right],
+\end{equation} \begin{equation}
+\xi_{-}^{B}(\vartheta) = \frac{1}{2} \left[ \xi_{+}(\vartheta) - \xi_{-}(\vartheta) + \int_{\vartheta_{\rm{min}}}^{\vartheta} \frac{d \theta\~\theta}{\vartheta^{2}} \xi_{+}(\theta) \left( 4 - \frac{12\theta^{2}}{\vartheta^{2}} \right) \right] - \frac{1}{2} \left[ V_{+}(\vartheta) - V_{-}(\vartheta)\right];
+\end{equation}
+
+where \(\xi_{\pm}(\theta)\) correspond to the shear-shear correlation
+function. The functions \(S_{\pm}(\theta)\) and \(V_{\pm}(\theta)\) are
+themselves defined by integrals and we refer the reader to Peter
+Schneider et al. (\citeproc{ref-Schneider_2022}{2022}) for more details
+about their definition. By contrast with the computation of the COSEBIs,
+these integrals are more stable and straightforward to compute but still
+require some level of precision. This is why we are using the
+\texttt{qags} method from QUADPACK
+(\citeproc{ref-piessens2012quadpack}{Piessens et al., 2012}) with a 5th
+order spline interpolation. In addition, as one can see from the
+equations above, the implementation requires a loop over a range of
+\(\vartheta\) values. This is why having a fast implementation will be
+required if one wants to use those correlation functions in cosmological
+inference. In \autoref{fig:pure_EB} we show the decomposition of the
+shear-shear correlation function into the E-/B-modes correlation
+functions and ambiguous mode.
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio]{pure_EB.png}}
+\caption{This figure shows the decomposition of the shear-shear
+correlation functions into E- and B-modes (and ambiguous
+mode).\label{fig:pure_EB}}
+\end{figure}
+
+To assess the speed improvement of our implementation, we have run the
+same computation using \texttt{Scipy} functions: \texttt{CubicSpline}
+for the interpolation and \texttt{quad} for the integration\footnote{The
+  test has been done on a Mac M3 Max using 16 cores. The script to run
+  the test is available at:
+  \url{https://github.com/aguinot/cosmo-numba/blob/main/notebooks/pure_EB_modes_comparison_with_scipy.ipynb}}.
+While the precision is comparable, our serial version is more than 8
+time faster while the parallel version is more than 50 times faster.
+
+\section{Research impact statement}\label{research-impact-statement}
+
+This software is being in the Utraviolet Near Infrared Optical Northern
+Survey (UNIONS) to validate the catalogue used for cosmological analysis
+(\citeproc{ref-unions_bmodes}{Daley et al., 2026}). We are also planning
+to use this code in the Roman High Latitude Imaging Survey (HLIS). In
+addition to its current usage in science collaborations, we provide unit
+tests that not only validate the implementation but also validate the
+computation mathematically and provide a higher bound for the accuracy
+of the code. Fianlly, examples can be found in the code repository that
+provide comparison against alternative approaches and implementations.
+They show that the computation presented here is significantly faster
+than existing alternatives.
+
+\section{AI usage disclosure}\label{ai-usage-disclosure}
+
+Artificial Intelligence (AI) has been use to help with documentation,
+docstrings and for some of the unit tests.
+
+\section{Acknowledgements}\label{acknowledgements}
+
+The authors acknowledge the support of a grant from the Simons
+Foundation (Simons Investigator in Astrophysics, Award ID 620789).
+
+\section*{References}\label{references}
+\addcontentsline{toc}{section}{References}
+
+\protect\phantomsection\label{refs}
+\begin{CSLReferences}{1}{0}
+\bibitem[\citeproctext]{ref-Planck_2018}
+Aghanim, N., Akrami, Y., Ashdown, M., Aumont, J., Baccigalupi, C.,
+Ballardini, M., Banday, A. J., Barreiro, R. B., Bartolo, N., Basak, S.,
+Battye, R., Benabed, K., Bernard, J.-P., Bersanelli, M., Bielewicz, P.,
+Bock, J. J., Bond, J. R., Borrill, J., Bouchet, F. R., \ldots{} Zonca,
+A. (2020). Planck 2018 results: VI. Cosmological parameters.
+\emph{Astronomy \&Amp; Astrophysics}, \emph{641}, A6.
+\url{https://doi.org/10.1051/0004-6361/201833910}
+
+\bibitem[\citeproctext]{ref-Chisari_2019}
+Chisari, N. E., Alonso, D., Krause, E., Leonard, C. D., Bull, P., Neveu,
+J., Villarreal, A., Singh, S., McClintock, T., Ellison, J., Du, Z.,
+Zuntz, J., Mead, A., Joudaki, S., Lorenz, C. S., Tröster, T., Sanchez,
+J., Lanusse, F., Ishak, M., \ldots{} Wagoner, E. L. (2019). Core
+cosmology library: Precision cosmological predictions for LSST.
+\emph{The Astrophysical Journal Supplement Series}, \emph{242}(1), 2.
+\url{https://doi.org/10.3847/1538-4365/ab1658}
+
+\bibitem[\citeproctext]{ref-unions_bmodes}
+Daley, C., Guinot, A., Guerrini, S., Hervas-Peters, F., Goh, L. W. K.,
+Murray, C., Kilbinger, M., Wittje, A., Hildebrandt, H., Hudson, M. J.,
+Waerbeke, L. van, Boer, T. de, \& Magnier, E. (2026). {UNIONS-3500 2D
+Cosmic Shear: III. B-mode tests and validation}. \emph{In Preparation}.
+
+\bibitem[\citeproctext]{ref-Hamilton_2000}
+Hamilton, A. J. S. (2000). Uncorrelated modes of the non-linear power
+spectrum. \emph{Monthly Notices of the Royal Astronomical Society},
+\emph{312}(2), 257--284.
+\url{https://doi.org/10.1046/j.1365-8711.2000.03071.x}
+
+\bibitem[\citeproctext]{ref-piessens2012quadpack}
+Piessens, R., Doncker-Kapenga, E. de, Überhuber, C. W., \& Kahaner, D.
+K. (2012). \emph{Quadpack: A subroutine package for automatic
+integration} (Vol. 1). Springer Science \& Business Media.
+
+\bibitem[\citeproctext]{ref-Schneider_2022}
+Schneider, Peter, Asgari, M., Jozani, Y. N., Dvornik, A., Giblin, B.,
+Harnois-Déraps, J., Heymans, C., Hildebrandt, H., Hoekstra, H., Kuijken,
+K., Shan, H., Tröster, T., \& Wright, A. H. (2022). Pure-mode
+correlation functions for cosmic shear and application to KiDS-1000.
+\emph{Astronomy \&Amp; Astrophysics}, \emph{664}, A77.
+\url{https://doi.org/10.1051/0004-6361/202142479}
+
+\bibitem[\citeproctext]{ref-Schneider_2010}
+Schneider, P., Eifler, T., \& Krause, E. (2010). COSEBIs: Extracting the
+full e-/b-mode information from cosmic shear correlation functions.
+\emph{Astronomy and Astrophysics}, \emph{520}, A116.
+\url{https://doi.org/10.1051/0004-6361/201014235}
+
+\bibitem[\citeproctext]{ref-LSST_SRD}
+The LSST Dark Energy Science Collaboration, Mandelbaum, R., Eifler, T.,
+Hložek, R., Collett, T., Gawiser, E., Scolnic, D., Alonso, D., Awan, H.,
+Biswas, R., Blazek, J., Burchat, P., Chisari, N. E., Dell'Antonio, I.,
+Digel, S., Frieman, J., Goldstein, D. A., Hook, I., Ivezić, Ž., \ldots{}
+Troxel, M. A. (2021). \emph{The LSST dark energy science collaboration
+(DESC) science requirements document}.
+\url{https://arxiv.org/abs/1809.01669}
+
+\bibitem[\citeproctext]{ref-kids_legacy}
+Wright, A. H., Stölzner, B., Asgari, M., Bilicki, M., Giblin, B.,
+Heymans, C., Hildebrandt, H., Hoekstra, H., Joachimi, B., Kuijken, K.,
+Li, S.-S., Reischke, R., Wietersheim-Kramsta, M. von, Yoon, M., Burger,
+P., Chisari, N. E., Jong, J. de, Dvornik, A., Georgiou, C., \ldots{}
+Zhang, Y.-H. (2025). KiDS-legacy: Cosmological constraints from cosmic
+shear with the complete kilo-degree survey. \emph{Astronomy \&Amp;
+Astrophysics}, \emph{703}, A158.
+\url{https://doi.org/10.1051/0004-6361/202554908}
+
+\end{CSLReferences}
+
+\end{document}
