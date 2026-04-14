@@ -57,17 +57,17 @@ number of calls to the likelihood function will require a fast implementation.
 
 # State of the field
 
-There are other implementations of the COSEBIs such as CosmoPipe[^1] used in
-the KiDS-legacy analysis [@kids_legacy]. Our implemetation is characterized by
-the use of `numba` that makes the computation of the filter functions described
-in \autoref{sec:cosebis} faster. Regarding the pure E-/B-mode decomposition, we
-have not found a similar publicly available implementation. That being said,
-they are classicaly used as a one-time measure for null tests in various
-surveys. The implementation we are presenting would enable one to use this
-decomposition for cosmological inference, which requires computing several
-integrals at each likelyhood call. While the commonly used
-`scipy` library would make the computation untractable, the speed gain by
-switching to `numba` opens new opportunities such as this one.
+There are other implementations of the COSEBIs and the pure E-/B-mode
+decomposition such as CosmoPipe[^1] used in the KiDS-legacy analysis
+[@kids_legacy]. Our implemetation is characterized by the use of `numba` that
+makes the computation of the filter functions described in
+\autoref{sec:cosebis} faster. The pure E-/B-mode decomposition is classicaly
+used as a one-time measure for null tests in various surveys. The
+implementation we are presenting would enable one to use this decomposition for
+cosmological inference, which requires computing several integrals at each
+likelihood call. While the commonly used `scipy` library would make the
+computation untractable, the speed gain by switching to `numba` opens new
+opportunities such as this one.
 
 [^1]: <https://github.com/AngusWright/CosmoPipe>
 
