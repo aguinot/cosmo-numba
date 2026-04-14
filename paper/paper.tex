@@ -198,20 +198,19 @@ fast implementation.
 
 \section{State of the field}\label{state-of-the-field}
 
-There are other implementations of the COSEBIs such as
-CosmoPipe\footnote{\url{https://github.com/AngusWright/CosmoPipe}} used
-in the KiDS-legacy analysis (\citeproc{ref-kids_legacy}{Wright et al.,
-2025}). Our implemetation is characterized by the use of \texttt{numba}
-that makes the computation of the filter functions described in
-\autoref{sec:cosebis} faster. Regarding the pure E-/B-mode
-decomposition, we have not found a similar publicly available
-implementation. That being said, they are classicaly used as a one-time
-measure for null tests in various surveys. The implementation we are
-presenting would enable one to use this decomposition for cosmological
-inference, which requires computing several integrals at each likelyhood
-call. While the commonly used \texttt{scipy} library would make the
-computation untractable, the speed gain by switching to \texttt{numba}
-opens new opportunities such as this one.
+There are other implementations of the COSEBIs and the pure E-/B-mode
+decomposition such as CosmoPipe\footnote{\url{https://github.com/AngusWright/CosmoPipe}}
+used in the KiDS-legacy analysis (\citeproc{ref-kids_legacy}{Wright et
+al., 2025}). Our implemetation is characterized by the use of
+\texttt{numba} that makes the computation of the filter functions
+described in \autoref{sec:cosebis} faster. The pure E-/B-mode
+decomposition is classicaly used as a one-time measure for null tests in
+various surveys. The implementation we are presenting would enable one
+to use this decomposition for cosmological inference, which requires
+computing several integrals at each likelihood call. While the commonly
+used \texttt{scipy} library would make the computation untractable, the
+speed gain by switching to \texttt{numba} opens new opportunities such
+as this one.
 
 \section{Software design}\label{software-design}
 
