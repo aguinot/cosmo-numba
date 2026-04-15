@@ -6,18 +6,25 @@
 Cosmo-Numba
 ========================================================================================
 
-Cosmo-Numba is library that implement cosmology related computations that
-laverage Numba Just-In-Time compilation to achieve high speed.
+Cosmo-Numba is a python library that implement cosmology related computations
+laveraging `numba` Just-In-Time compilation to achieve high speed.
 
 Installation
 ----------------------------------------------------------------------------------------
 
-The library can be installed using pip. From the root of the repository, run:
+To install `cosmo-numba`, first clone the repository:
+
+.. code-block:: console
+
+   >> git clone https://github.com/aguinot/cosmo-numba.git
+
+Then, from the root repository, install the package using `pip`:
 
 .. code-block:: console
 
    >> pip install .
 
+Both Linux and MacOS are supported.
 
 .. toctree::
    :hidden:
