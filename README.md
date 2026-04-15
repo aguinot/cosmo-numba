@@ -7,4 +7,17 @@
 Cosmology computation accelerated with Numba
 
 ## Installation
-`pip install -e .`
+
+To install `cosmo-numba`, first clone the repository:
+
+```bash
+git clone https://github.com/aguinot/cosmo-numba.git
+```
+
+Then, from the root repository, install the package using `pip`:
+
+```bash
+pip install .
+```
+
+Both Linux and MacOS are supported.
